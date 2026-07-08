@@ -168,11 +168,11 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   width: 0%;
 }
 
-.product-progress-pct {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #606c38;
-  min-width: 32px;
+.product-remaining {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #9c6644;
+  margin-top: 6px;
   text-align: right;
 }
 
@@ -406,10 +406,18 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .modal-remaining {
   text-align: center;
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 900;
   color: #9c6644;
-  margin-bottom: 12px;
+  margin: 8px 0 12px;
+}
+
+.modal-progress {
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 16px;
 }
 
 .modal-set-row {
@@ -500,8 +508,8 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .product-name { color: #e0e0e0; }
   .product-target { color: #888; }
   .product-progress-container { background: #2a2a4a; }
-  .product-progress-pct { color: #a3b18a; }
   .product-count { color: #dda15e; }
+  .product-remaining { color: #dda15e !important; }
   .btn-count-plus { background: #606c38; }
   .btn-count-minus { background: #2a2a4a; color: #e0e0e0; }
   .btn-count-minus:active { background: #3a3a5a; }
