@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#bc6c25">
+  <meta name="description" content="Control de producción semanal para panadería">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>PanCalc</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>🥖 PanCalc</h1>
+      <span id="current-date"></span>
+    </header>
+
+    <div id="tab-bar">
+      <button class="tab active" data-tab="today">Hoy</button>
+      <button class="tab" data-tab="week">Semana</button>
+      <button class="tab" data-tab="summary">Resumen</button>
+    </div>
+
+    <!-- ====== TAB HOY ====== -->
+    <div id="view-today" class="view active">
+      <div class="day-header">
+        <span id="today-day"></span>
+        <div class="today-circular-progress">
+          <svg viewBox="0 0 36 36">
+            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path id="today-circle-progress" class="circle-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <text x="18" y="20.5" class="circle-text" id="today-pct-text">0%</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Buscar producto...">
+      </div>
+
+      <div id="today-product-list" class="product-list"></div>
+    </div>
+
+    <!-- ====== TAB SEMANA ====== -->
+    <div id="view-week" class="view">
+      <div class="week-nav">
+        <button id="prev-day" class="nav-arrow">&lt;</button>
+        <select id="day-selector"></select>
+        <button id="next-day" class="nav-arrow">&gt;</button>
+      </div>
+      <div id="week-product-list" class="product-list"></div>
+    </div>
+
+    <!-- ====== TAB RESUMEN ====== -->
+    <div id="view-summary" class="view">
+      <div class="summary-cards">
+        <div class="summary-card">
+          <span class="summary-label">Total Semanal</span>
+          <span class="summary-value" id="summary-total-target">0</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Producido</span>
+          <span class="summary-value" id="summary-total-produced">0</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Progreso</span>
+          <span class="summary-value" id="summary-total-pct">0%</span>
+        </div>
+      </div>
+
+      <div class="summary-controls">
+        <button id="reset-week" class="btn-secondary">Reiniciar todo</button>
+      </div>
+
+      <h2 class="section-title">Productos por completar</h2>
+      <div id="summary-product-list" class="product-list"></div>
+    </div>
+
+    <!-- ====== MODAL PRODUCTO ====== -->
+    <div id="product-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-product-name"></h3>
+          <button id="modal-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-target">
+            <span>Meta hoy:</span>
+            <strong id="modal-target-value"></strong>
+          </div>
+          <div class="modal-progress">
+            <div class="modal-progress-bar" id="modal-progress-bar"></div>
+          </div>
+          <div class="modal-counter">
+            <span class="modal-count" id="modal-count">0</span>
+            <span class="modal-count-label">producidos</span>
+          </div>
+          <div class="modal-actions">
+            <button class="modal-btn" onclick="modalAdd(1)">+1</button>
+            <button class="modal-btn" onclick="modalAdd(5)">+5</button>
+            <button class="modal-btn" onclick="modalAdd(10)">+10</button>
+            <button class="modal-btn modal-btn-minus" onclick="modalAdd(-1)">-1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
