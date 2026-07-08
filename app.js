@@ -148,6 +148,8 @@ function renderTodayView() {
     const searchMatch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
     if (!searchMatch) return;
 
+    const remaining = Math.max(0, target - produced);
+
     html += `
       <div class="product-card ${isDone ? 'completed' : ''}" onclick="openModal('${p.name.replace(/'/g, "\\'")}', ${target})">
         <div class="product-card-header">
@@ -164,6 +166,9 @@ function renderTodayView() {
             <div class="product-progress-fill" style="width:${pct}%"></div>
           </div>
           <span class="product-progress-pct">${Math.round(pct)}%</span>
+        </div>
+        <div style="font-size:0.8rem;color:#9c6644;font-weight:600;margin-top:4px;text-align:right">
+          ${isDone ? '✅ Completado' : 'Faltan ' + remaining.toFixed(1)}
         </div>
       </div>`;
   });
@@ -234,6 +239,7 @@ function renderSummary() {
   let html = items.map(item => {
     const pct = Math.min(100, (item.produced / item.target) * 100);
     const isDone = item.produced >= item.target;
+    const remaining = Math.max(0, item.target - item.produced);
     return `
       <div class="product-card ${isDone ? 'completed' : ''}">
         <div class="product-card-header">
@@ -245,6 +251,9 @@ function renderSummary() {
             <div class="product-progress-fill" style="width:${pct}%"></div>
           </div>
           <span class="product-progress-pct">${Math.round(pct)}%</span>
+        </div>
+        <div style="font-size:0.8rem;color:#9c6644;font-weight:600;margin-top:4px;text-align:right">
+          ${isDone ? '✅ Completado' : 'Faltan ' + remaining.toFixed(1)}
         </div>
       </div>`;
   }).join('');
@@ -271,6 +280,16 @@ function openModal(name, target) {
   const pct = target > 0 ? Math.min(100, (count / target) * 100) : 0;
   document.getElementById('modal-progress-bar').style.width = pct + '%';
 
+  const remaining = Math.max(0, target - count);
+  const remEl = document.getElementById('modal-remaining');
+  if (remaining === 0) {
+    remEl.textContent = '✅ ¡Completado!';
+    remEl.style.color = '#606c38';
+  } else {
+    remEl.textContent = `Faltan: ${remaining.toFixed(1)}`;
+    remEl.style.color = '#9c6644';
+  }
+
   document.getElementById('product-modal').classList.remove('hidden');
 }
 
@@ -281,6 +300,16 @@ function modalAdd(amount) {
   document.getElementById('modal-count').textContent = count;
   const pct = modalTarget > 0 ? Math.min(100, (count / modalTarget) * 100) : 0;
   document.getElementById('modal-progress-bar').style.width = pct + '%';
+
+  const remaining = Math.max(0, modalTarget - count);
+  const remEl = document.getElementById('modal-remaining');
+  if (remaining === 0) {
+    remEl.textContent = '✅ ¡Completado!';
+    remEl.style.color = '#606c38';
+  } else {
+    remEl.textContent = `Faltan: ${remaining.toFixed(1)}`;
+    remEl.style.color = '#9c6644';
+  }
 }
 
 function closeModal() {

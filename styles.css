@@ -404,6 +404,14 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .modal-count-label { font-size: 0.9rem; color: #999; }
 
+.modal-remaining {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #9c6644;
+  margin-bottom: 16px;
+}
+
 .modal-actions {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -454,6 +462,7 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .modal-progress { background: #2a2a4a; }
   .modal-count { color: #dda15e; }
   .modal-count-label { color: #888; }
+  .modal-remaining { color: #dda15e !important; }
   .summary-label { color: #888; }
   .summary-value { color: #e0e0e0; }
   .section-title { color: #e0e0e0; }
