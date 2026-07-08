@@ -99,6 +99,13 @@
             <span class="modal-count-label">producidos</span>
           </div>
           <div class="modal-remaining" id="modal-remaining">Faltan: 0</div>
+          <div class="modal-set-row">
+            <label>Escribe los que llevas:</label>
+            <div class="modal-set-input-group">
+              <input type="number" id="modal-set-input" min="0" step="1" inputmode="numeric">
+              <button id="modal-set-btn" onclick="modalSetValue()">Fijar</button>
+            </div>
+          </div>
           <div class="modal-actions">
             <button class="modal-btn" onclick="modalAdd(1)">+1</button>
             <button class="modal-btn" onclick="modalAdd(5)">+5</button>

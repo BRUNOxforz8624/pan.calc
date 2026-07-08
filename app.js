@@ -290,6 +290,9 @@ function openModal(name, target) {
     remEl.style.color = '#9c6644';
   }
 
+  document.getElementById('modal-set-input').value = '';
+  document.getElementById('modal-set-input').focus();
+
   document.getElementById('product-modal').classList.remove('hidden');
 }
 
@@ -310,6 +313,20 @@ function modalAdd(amount) {
     remEl.textContent = `Faltan: ${remaining.toFixed(1)}`;
     remEl.style.color = '#9c6644';
   }
+}
+
+function modalSetValue() {
+  const input = document.getElementById('modal-set-input');
+  let value = parseInt(input.value, 10);
+  if (isNaN(value) || value < 0) value = 0;
+
+  const todayProd = getTodayProd();
+  const current = todayProd[modalProductName] || 0;
+  const diff = value - current;
+  if (diff !== 0) {
+    addProduction(modalProductName, diff);
+  }
+  input.value = '';
 }
 
 function closeModal() {
@@ -366,6 +383,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+  document.getElementById('modal-set-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') modalSetValue();
+  });
 
   // Reset week
   document.getElementById('reset-week').addEventListener('click', () => {

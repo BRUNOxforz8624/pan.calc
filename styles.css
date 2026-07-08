@@ -409,7 +409,57 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   font-size: 1.3rem;
   font-weight: 800;
   color: #9c6644;
+  margin-bottom: 12px;
+}
+
+.modal-set-row {
   margin-bottom: 16px;
+  text-align: center;
+}
+
+.modal-set-row label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.modal-set-input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.modal-set-input-group input {
+  width: 120px;
+  font-size: 1.3rem;
+  text-align: center;
+  border: 2px solid #d4a373;
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 700;
+  background: #fff;
+  color: #283618;
+  outline: none;
+}
+
+.modal-set-input-group input:focus {
+  border-color: #bc6c25;
+}
+
+.modal-set-input-group button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  background: #606c38;
+  color: #fff;
+  cursor: pointer;
+}
+
+.modal-set-input-group button:active {
+  background: #4a5530;
 }
 
 .modal-actions {
@@ -463,6 +513,8 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .modal-count { color: #dda15e; }
   .modal-count-label { color: #888; }
   .modal-remaining { color: #dda15e !important; }
+  .modal-set-row label { color: #999; }
+  .modal-set-input-group input { background: #0f3460; color: #e0e0e0; border-color: #533483; }
   .summary-label { color: #888; }
   .summary-value { color: #e0e0e0; }
   .section-title { color: #e0e0e0; }
