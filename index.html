@@ -20,7 +20,7 @@
     <div id="tab-bar">
       <button class="tab active" data-tab="today">Hoy</button>
       <button class="tab" data-tab="week">Semana</button>
-      <button class="tab" data-tab="summary">Resumen</button>
+      <button class="tab" data-tab="report">Reporte</button>
     </div>
 
     <!-- ====== TAB HOY ====== -->
@@ -53,29 +53,29 @@
       <div id="week-product-list" class="product-list"></div>
     </div>
 
-    <!-- ====== TAB RESUMEN ====== -->
-    <div id="view-summary" class="view">
-      <div class="summary-cards">
-        <div class="summary-card">
-          <span class="summary-label">Total Semanal</span>
-          <span class="summary-value" id="summary-total-target">0</span>
+    <!-- ====== TAB REPORTE ====== -->
+    <div id="view-report" class="view">
+      <div class="report-header">
+        <div class="report-date" id="report-date"></div>
+        <div class="report-title">Producción del día</div>
+      </div>
+
+      <div class="report-stats">
+        <div class="report-stat">
+          <span class="report-stat-value" id="report-total-target">0</span>
+          <span class="report-stat-label">Meta total</span>
         </div>
-        <div class="summary-card">
-          <span class="summary-label">Producido</span>
-          <span class="summary-value" id="summary-total-produced">0</span>
+        <div class="report-stat">
+          <span class="report-stat-value" id="report-total-produced">0</span>
+          <span class="report-stat-label">Producido</span>
         </div>
-        <div class="summary-card">
-          <span class="summary-label">Progreso</span>
-          <span class="summary-value" id="summary-total-pct">0%</span>
+        <div class="report-stat">
+          <span class="report-stat-value" id="report-total-missing">0</span>
+          <span class="report-stat-label">Faltan</span>
         </div>
       </div>
 
-      <div class="summary-controls">
-        <button id="reset-week" class="btn-secondary">Reiniciar todo</button>
-      </div>
-
-      <h2 class="section-title">Productos por completar</h2>
-      <div id="summary-product-list" class="product-list"></div>
+      <div id="report-product-list" class="report-list"></div>
     </div>
 
     <!-- ====== MODAL PRODUCTO ====== -->

@@ -117,7 +117,7 @@ function renderAll() {
   renderDate();
   renderTodayView();
   renderWeekView();
-  renderSummary();
+  renderReport();
 }
 
 function renderDate() {
@@ -209,50 +209,44 @@ function renderWeekView() {
   container.innerHTML = html || '<p style="text-align:center;color:#999;padding:20px">Sin productos para este día</p>';
 }
 
-function renderSummary() {
-  const container = document.getElementById('summary-product-list');
+function renderReport() {
+  const container = document.getElementById('report-product-list');
+  const todayIdx = getDayIndex();
+  const todayProd = getTodayProd();
+
+  // Date
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = new Date().toLocaleDateString('es-ES', opts);
+  document.getElementById('report-date').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
   let totalTarget = 0, totalProduced = 0;
-  const items = [];
 
+  const rows = [];
   PRODUCTS.forEach(p => {
-    const weeklyTarget = getWeeklyTarget(p);
-    if (weeklyTarget === 0) return;
-    totalTarget += weeklyTarget;
-    const produced = getWeeklyProduced(p, production);
+    const target = getTarget(p, todayIdx);
+    if (target === 0) return;
+    totalTarget += target;
+    const produced = todayProd[p.name] || 0;
     totalProduced += produced;
-    const pct = Math.min(100, (produced / weeklyTarget) * 100);
-    items.push({ name: p.name, target: weeklyTarget, produced, pct });
+    const remaining = Math.max(0, target - produced);
+    const isDone = produced >= target;
+    rows.push({ name: p.name, target, produced, remaining, isDone });
   });
 
-  document.getElementById('summary-total-target').textContent = totalTarget.toFixed(1);
-  document.getElementById('summary-total-produced').textContent = totalProduced.toFixed(0);
-  const totalPct = totalTarget > 0 ? Math.round((totalProduced / totalTarget) * 100) : 0;
-  document.getElementById('summary-total-pct').textContent = `${totalPct}%`;
+  document.getElementById('report-total-target').textContent = totalTarget.toFixed(1);
+  document.getElementById('report-total-produced').textContent = totalProduced.toFixed(0);
+  document.getElementById('report-total-missing').textContent = Math.max(0, totalTarget - totalProduced).toFixed(1);
 
-  // Sort by least progress first
-  items.sort((a, b) => (a.produced / a.target) - (b.produced / b.target));
-
-  let html = items.map(item => {
-    const pct = Math.min(100, (item.produced / item.target) * 100);
-    const isDone = item.produced >= item.target;
-    const remaining = Math.max(0, item.target - item.produced);
-    return `
-      <div class="product-card ${isDone ? 'completed' : ''}">
-        <div class="product-card-header">
-          <span class="product-name">${item.name}</span>
-          <span class="product-target">${item.produced.toFixed(0)} / ${item.target.toFixed(1)}</span>
-        </div>
-        <div class="product-progress-row">
-          <div class="product-progress-container">
-            <div class="product-progress-fill" style="width:${pct}%"></div>
-          </div>
-        </div>
-        <div class="product-remaining">
-          ${isDone ? '✅ Completado' : 'Faltan ' + remaining.toFixed(1)}
-        </div>
-      </div>`;
-  }).join('');
+  let html = rows.map(r => `
+    <div class="report-row ${r.isDone ? 'done' : ''}">
+      <span class="report-row-name">${r.name}</span>
+      <span class="report-row-numbers">
+        <span class="report-row-produced">${r.produced.toFixed(0)}</span>
+        <span class="report-row-target"> / ${r.target.toFixed(1)}</span>
+      </span>
+      <span class="report-row-missing">${r.isDone ? '✅' : r.remaining.toFixed(1)}</span>
+    </div>
+  `).join('');
 
   container.innerHTML = html;
 }
@@ -338,7 +332,7 @@ function switchTab(tab) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${tab}`));
   if (tab === 'today') renderTodayView();
   if (tab === 'week') renderWeekView();
-  if (tab === 'summary') renderSummary();
+  if (tab === 'report') renderReport();
 }
 
 // ============================
@@ -381,15 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.modal-backdrop').addEventListener('click', closeModal);
   document.getElementById('modal-set-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') modalSetValue();
-  });
-
-  // Reset week
-  document.getElementById('reset-week').addEventListener('click', () => {
-    if (confirm('¿Reiniciar toda la producción semanal?')) {
-      production = {};
-      saveProduction();
-      renderAll();
-    }
   });
 
   // Keyboard escape
