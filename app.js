@@ -108,6 +108,11 @@ function addProduction(productName, amount) {
   renderAll();
 
   try { navigator.vibrate(10); } catch(e) {}
+
+  // Enviar a ThingSpeak cada 5 pulsaciones (evita spam)
+  const todayProd2 = getTodayProd();
+  const totalSimple = Object.values(todayProd2).reduce((s, v) => s + v, 0);
+  if (totalSimple % 5 === 0 || amount < 0) sendToThingSpeak();
 }
 
 // ============================
@@ -431,6 +436,7 @@ function saveTandas() {
   saveBatch();
   closeTandaModal();
   renderProduction();
+  sendToThingSpeak();
 }
 
 function closeTandaModal() {
@@ -529,6 +535,57 @@ function renderReporteFinal() {
   list.innerHTML = html;
 }
 
+// ============================
+// THINGSPEAK INTEGRATION
+// ============================
+// Cambia estos valores por los de tu canal:
+const TS_CHANNEL_ID = 'XXXXXX';        // Tu Channel ID
+const TS_WRITE_KEY  = 'XXXXXXXXXXXX';  // Tu Write API Key
+const TS_URL = `https://api.thingspeak.com/update?api_key=${TS_WRITE_KEY}`;
+
+function sendToThingSpeak() {
+  const todayIdx = getDayIndex();
+  const todayProd = getTodayProd();
+  const todayBatch = getTodayBatch();
+
+  let totalTarget = 0, totalProduced = 0;
+  let totalTandas = 0, totalMermas = 0, totalNeto = 0;
+
+  PRODUCTS.forEach(p => {
+    const target = getTarget(p, todayIdx);
+    if (target === 0) return;
+    totalTarget += target;
+    totalProduced += todayProd[p.name] || 0;
+
+    const pb = todayBatch[p.name];
+    const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
+    const mermas = pb ? (pb.mermas || 0) : 0;
+    totalTandas += tandas;
+    totalMermas += mermas;
+    totalNeto += Math.max(0, tandas - mermas);
+  });
+
+  const faltan = Math.max(0, totalTarget - totalProduced);
+  const pct = totalTarget > 0 ? Math.round((totalProduced / totalTarget) * 100) : 0;
+
+  const params = new URLSearchParams({
+    field1: totalTarget.toFixed(1),    // Meta total del día
+    field2: totalProduced.toFixed(0),  // Producido (simple)
+    field3: faltan.toFixed(1),         // Faltan
+    field4: totalTandas.toFixed(0),    // Total tandas
+    field5: totalMermas.toFixed(0),    // Mermas
+    field6: totalNeto.toFixed(0),      // Neto (tandas - mermas)
+    field7: pct.toFixed(0),            // % progreso
+    field8: new Date().toLocaleDateString('es-ES'), // Fecha
+  });
+
+  fetch(`${TS_URL}&${params.toString()}`)
+    .then(r => console.log('ThingSpeak:', r.ok ? 'OK' : 'Error ' + r.status))
+    .catch(e => console.log('ThingSpeak error:', e));
+}
+
+// Llama a sendToThingSpeak() donde quieras enviar los datos.
+// Por ahora se envía al guardar tandas y al añadir producción simple.
 // ============================
 // EVENTS
 // ============================
