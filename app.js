@@ -127,7 +127,7 @@ prodRef.on('value', snap => {
 function renderAll() {
   renderDate();
   renderTodayView();
-  renderMonthView();
+  renderCalView();
   renderReport();
   renderReporteFinal();
   renderProduction();
@@ -200,72 +200,34 @@ function renderTodayView() {
   document.getElementById('today-pct-text').textContent = `${totalPct}%`;
 }
 
-let calMonth = new Date().getMonth();
-let calYear = new Date().getFullYear();
 let selectedDateKey = getTodayKey();
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-function renderMonthView() {
-  const grid = document.getElementById('cal-grid');
-
-  document.getElementById('month-label').textContent = MONTHS[calMonth] + ' ' + calYear;
-
-  const firstDay = new Date(calYear, calMonth, 1);
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
-
-  let cells = '';
-  for (let i = 0; i < startDow; i++) cells += '<div class="cal-day cal-day-empty"></div>';
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dow = (startDow + d - 1) % 7;
-    const isToday = dateKey === getTodayKey();
-    const isSelected = dateKey === selectedDateKey;
-
-    let totalTarget = 0;
-    PRODUCTS.forEach(p => { totalTarget += getTarget(p, dow); });
-
-    const dayBatch = batchData[dateKey] || {};
-    let totalNeto = 0;
-    PRODUCTS.forEach(p => {
-      const pb = dayBatch[p.name];
-      if (pb) totalNeto += Math.max(0, calcTandaTotal(pb.tandas) - (pb.mermas || 0));
-    });
-    const pct = totalTarget > 0 ? Math.round((totalNeto / totalTarget) * 100) : 0;
-
-    cells += `
-      <div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${totalTarget === 0 ? 'no-target' : ''}" onclick="selectCalDay('${dateKey}')">
-        <div class="cal-day-num">${d}</div>
-        <div class="cal-day-total">${totalTarget.toFixed(0)}</div>
-        <div class="cal-day-status">${pct}%</div>
-      </div>`;
-  }
-
-  grid.innerHTML = cells;
+function renderCalView() {
+  document.getElementById('cal-date-picker').value = selectedDateKey;
 }
 
 function selectCalDay(dateKey) {
   selectedDateKey = dateKey;
+  document.getElementById('cal-date-picker').value = dateKey;
   openDayModal(dateKey);
 }
 
-function prevMonth() {
-  calMonth--;
-  if (calMonth < 0) { calMonth = 11; calYear--; }
-  const lastDay = new Date(calYear, calMonth + 1, 0);
-  const keys = Object.keys(batchData);
-  if (keys.length) selectedDateKey = keys[keys.length - 1];
-  else selectedDateKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
-  renderMonthView();
+function prevDay() {
+  const dt = new Date(selectedDateKey + 'T12:00:00');
+  dt.setDate(dt.getDate() - 1);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  selectCalDay(`${y}-${m}-${d}`);
 }
 
-function nextMonth() {
-  calMonth++;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  const firstKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
-  selectedDateKey = firstKey;
-  renderMonthView();
+function nextDay() {
+  const dt = new Date(selectedDateKey + 'T12:00:00');
+  dt.setDate(dt.getDate() + 1);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  selectCalDay(`${y}-${m}-${d}`);
 }
 
 function buildDayDetailHTML(dateKey) {
@@ -464,7 +426,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${tab}`));
   if (tab === 'today') renderTodayView();
-  if (tab === 'week') { selectedDateKey = getTodayKey(); renderMonthView(); }
+  if (tab === 'week') { selectedDateKey = getTodayKey(); renderCalView(); }
   if (tab === 'report') renderReport();
   if (tab === 'production') renderProduction();
 }
@@ -666,7 +628,7 @@ batchRef.on('value', snap => {
 });
 
 function renderAllViews() {
-  if (currentTab === 'week') renderMonthView();
+  if (currentTab === 'week') renderCalView();
   if (currentTab === 'report') {
     renderReport();
     renderReporteFinal();
@@ -751,9 +713,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTodayView();
   });
 
-  // Month navigation
-  document.getElementById('prev-month').addEventListener('click', prevMonth);
-  document.getElementById('next-month').addEventListener('click', nextMonth);
+  // Date picker navigation
+  document.getElementById('cal-prev-day').addEventListener('click', prevDay);
+  document.getElementById('cal-next-day').addEventListener('click', nextDay);
+  document.getElementById('cal-date-picker').addEventListener('change', e => {
+    if (e.target.value) selectCalDay(e.target.value);
+  });
 
   // Modal (Hoy)
   document.getElementById('modal-close').addEventListener('click', closeModal);
