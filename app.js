@@ -243,13 +243,11 @@ function renderMonthView() {
   }
 
   grid.innerHTML = cells;
-
-  if (selectedDateKey) renderDayDetailForDateKey(selectedDateKey);
 }
 
 function selectCalDay(dateKey) {
   selectedDateKey = dateKey;
-  renderMonthView();
+  openDayModal(dateKey);
 }
 
 function prevMonth() {
@@ -270,34 +268,25 @@ function nextMonth() {
   renderMonthView();
 }
 
-function renderDayDetailForDateKey(dateKey) {
+function buildDayDetailHTML(dateKey) {
   const [y, m, d] = dateKey.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
   const dayIdx = (dt.getDay() + 6) % 7;
-  const header = document.getElementById('cal-detail-header');
-  const body = document.getElementById('cal-detail-body');
   const dayBatch = batchData[dateKey] || {};
 
-  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const dateStr = dt.toLocaleDateString('es-ES', opts);
-  header.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-
   let totalTandas = 0, totalMermas = 0, totalNeto = 0;
-
   const rows = [];
+
   PRODUCTS.forEach(p => {
     const target = getTarget(p, dayIdx);
     if (target === 0) return;
-
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
     const mermas = pb ? (pb.mermas || 0) : 0;
     const neto = Math.max(0, tandas - mermas);
-
     totalTandas += tandas;
     totalMermas += mermas;
     totalNeto += neto;
-
     rows.push({ name: p.name, target, tandas, mermas, neto });
   });
 
@@ -316,24 +305,36 @@ function renderDayDetailForDateKey(dateKey) {
       </div>`;
   }).join('');
 
-  html = `
+  return `
     <div style="display:flex;gap:6px;padding:6px 0;margin-bottom:8px">
-      <div style="flex:1;background:#fff;border-radius:8px;padding:6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <strong style="display:block;font-size:0.9rem;color:#283618">${totalTandas.toFixed(0)}</strong>
-        <span style="font-size:0.6rem;color:#999">Tandas</span>
+      <div style="flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <strong style="display:block;font-size:1.1rem;color:#283618">${totalTandas.toFixed(0)}</strong>
+        <span style="font-size:0.7rem;color:#999">Tandas</span>
       </div>
-      <div style="flex:1;background:#fff;border-radius:8px;padding:6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <strong style="display:block;font-size:0.9rem;color:#9c6644">${totalMermas.toFixed(0)}</strong>
-        <span style="font-size:0.6rem;color:#999">Mermas</span>
+      <div style="flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <strong style="display:block;font-size:1.1rem;color:#9c6644">${totalMermas.toFixed(0)}</strong>
+        <span style="font-size:0.7rem;color:#999">Mermas</span>
       </div>
-      <div style="flex:1;background:#fff;border-radius:8px;padding:6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <strong style="display:block;font-size:0.9rem;color:#606c38">${totalNeto.toFixed(0)}</strong>
-        <span style="font-size:0.6rem;color:#999">Neto</span>
+      <div style="flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <strong style="display:block;font-size:1.1rem;color:#606c38">${totalNeto.toFixed(0)}</strong>
+        <span style="font-size:0.7rem;color:#999">Neto</span>
       </div>
     </div>
   ` + (rows.length ? html : '<p style="text-align:center;color:#999;padding:16px;font-size:0.85rem">Sin productos para este día</p>');
+}
 
-  body.innerHTML = html;
+function openDayModal(dateKey) {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = dt.toLocaleDateString('es-ES', opts);
+  document.getElementById('day-modal-header').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+  document.getElementById('day-modal-body').innerHTML = buildDayDetailHTML(dateKey);
+  document.getElementById('day-modal').classList.remove('hidden');
+}
+
+function closeDayModal() {
+  document.getElementById('day-modal').classList.add('hidden');
 }
 
 function renderReport() {
@@ -760,6 +761,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') modalSetValue();
   });
 
+  // Modal Día
+  document.getElementById('day-modal-close').addEventListener('click', closeDayModal);
+
   // Modal Tandas
   document.getElementById('tanda-modal-close').addEventListener('click', closeTandaModal);
   document.getElementById('tanda-mermas-input').addEventListener('input', updateTandaSummary);
@@ -767,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeTandaModal(); }
+    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); }
   });
 
   renderAll();
