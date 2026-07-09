@@ -864,4 +864,8 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .tanda-neto-row strong { color: #a3b18a; }
   .tanda-mermas-row input { background: #16213e; border-color: #2a2a4a; color: #dda15e; }
   .modal-backdrop { background: rgba(0,0,0,0.6); }
+  .cal-detail-body > div:first-child > div { background: #16213e !important; }
+  .cal-detail-body > div:first-child > div strong { color: #e0e0e0 !important; }
+  .cal-detail-body > div:first-child > div strong[style*="color:#9c6644"] { color: #dda15e !important; }
+  .cal-detail-body > div:first-child > div strong[style*="color:#606c38"] { color: #a3b18a !important; }
 }
