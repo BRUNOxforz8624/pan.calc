@@ -324,13 +324,18 @@ function buildDayDetailHTML(dateKey) {
 }
 
 function openDayModal(dateKey) {
-  const [y, m, d] = dateKey.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const dateStr = dt.toLocaleDateString('es-ES', opts);
-  document.getElementById('day-modal-header').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-  document.getElementById('day-modal-body').innerHTML = buildDayDetailHTML(dateKey);
-  document.getElementById('day-modal').classList.remove('hidden');
+  try {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateStr = dt.toLocaleDateString('es-ES', opts);
+    document.getElementById('day-modal-header').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+    document.getElementById('day-modal-body').innerHTML = buildDayDetailHTML(dateKey);
+    document.getElementById('day-modal').classList.remove('hidden');
+  } catch(e) {
+    document.getElementById('day-modal-body').innerHTML = '<p style="text-align:center;color:#999;padding:20px">Error al cargar datos</p>';
+    document.getElementById('day-modal').classList.remove('hidden');
+  }
 }
 
 function closeDayModal() {
@@ -484,6 +489,7 @@ function getProductBatch(productName) {
 }
 
 function calcTandaTotal(tandas) {
+  if (!Array.isArray(tandas)) return 0;
   return tandas.reduce((s, t) => s + (parseFloat(t.qty) || 0), 0);
 }
 
