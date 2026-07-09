@@ -127,7 +127,7 @@ prodRef.on('value', snap => {
 function renderAll() {
   renderDate();
   renderTodayView();
-  renderWeekView();
+  renderMonthView();
   renderReport();
   renderReporteFinal();
   renderProduction();
@@ -200,69 +200,87 @@ function renderTodayView() {
   document.getElementById('today-pct-text').textContent = `${totalPct}%`;
 }
 
-let selectedCalDay = getDayIndex();
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let selectedDateKey = getTodayKey();
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-function renderWeekView() {
+function renderMonthView() {
   const grid = document.getElementById('cal-grid');
-  const todayIdx = getDayIndex();
 
-  // Calcular total por día
-  const dayTotals = DAYS.map((_, idx) => {
-    let total = 0;
-    PRODUCTS.forEach(p => { total += getTarget(p, idx); });
-    return total;
-  });
+  document.getElementById('month-label').textContent = MONTHS[calMonth] + ' ' + calYear;
 
-  let gridHtml = DAYS.map((dayName, idx) => {
-    const isToday = idx === todayIdx;
-    const isSelected = idx === selectedCalDay;
-    const isPast = false; // simplificado
+  const firstDay = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
 
-    // Progreso del día (batch data)
-    const dayKey = getDateKeyForDay(idx);
-    const dayBatch = batchData[dayKey] || {};
+  let cells = '';
+  for (let i = 0; i < startDow; i++) cells += '<div class="cal-day cal-day-empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = (startDow + d - 1) % 7;
+    const isToday = dateKey === getTodayKey();
+    const isSelected = dateKey === selectedDateKey;
+
+    let totalTarget = 0;
+    PRODUCTS.forEach(p => { totalTarget += getTarget(p, dow); });
+
+    const dayBatch = batchData[dateKey] || {};
     let totalNeto = 0;
     PRODUCTS.forEach(p => {
       const pb = dayBatch[p.name];
       if (pb) totalNeto += Math.max(0, calcTandaTotal(pb.tandas) - (pb.mermas || 0));
     });
-    const totalTarget = dayTotals[idx];
     const pct = totalTarget > 0 ? Math.round((totalNeto / totalTarget) * 100) : 0;
 
-    return `
-      <div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalDay(${idx})">
-        <div class="cal-day-name">${dayName.slice(0,3)}</div>
+    cells += `
+      <div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${totalTarget === 0 ? 'no-target' : ''}" onclick="selectCalDay('${dateKey}')">
+        <div class="cal-day-num">${d}</div>
         <div class="cal-day-total">${totalTarget.toFixed(0)}</div>
         <div class="cal-day-status">${pct}%</div>
       </div>`;
-  }).join('');
+  }
 
-  grid.innerHTML = gridHtml;
+  grid.innerHTML = cells;
 
-  // Mostrar detalle del día seleccionado
-  renderDayDetail(selectedCalDay);
+  if (selectedDateKey) renderDayDetailForDateKey(selectedDateKey);
 }
 
-function getDateKeyForDay(dayIdx) {
-  const today = new Date();
-  const diff = dayIdx - getDayIndex();
-  const d = new Date(today);
-  d.setDate(today.getDate() + diff);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function selectCalDay(dateKey) {
+  selectedDateKey = dateKey;
+  renderMonthView();
 }
 
-function selectCalDay(idx) {
-  selectedCalDay = idx;
-  renderWeekView();
+function prevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  const lastDay = new Date(calYear, calMonth + 1, 0);
+  const keys = Object.keys(batchData);
+  if (keys.length) selectedDateKey = keys[keys.length - 1];
+  else selectedDateKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  renderMonthView();
 }
 
-function renderDayDetail(dayIdx) {
+function nextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  const firstKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  selectedDateKey = firstKey;
+  renderMonthView();
+}
+
+function renderDayDetailForDateKey(dateKey) {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const dayIdx = (dt.getDay() + 6) % 7;
   const header = document.getElementById('cal-detail-header');
   const body = document.getElementById('cal-detail-body');
-  const dayKey = getDateKeyForDay(dayIdx);
-  const dayBatch = batchData[dayKey] || {};
+  const dayBatch = batchData[dateKey] || {};
 
-  header.textContent = `${DAYS[dayIdx]} — Detalle de producción`;
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = dt.toLocaleDateString('es-ES', opts);
+  header.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
   let totalTandas = 0, totalMermas = 0, totalNeto = 0;
 
@@ -440,7 +458,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${tab}`));
   if (tab === 'today') renderTodayView();
-  if (tab === 'week') renderWeekView();
+  if (tab === 'week') { selectedDateKey = getTodayKey(); renderMonthView(); }
   if (tab === 'report') renderReport();
   if (tab === 'production') renderProduction();
 }
@@ -641,7 +659,7 @@ batchRef.on('value', snap => {
 });
 
 function renderAllViews() {
-  if (currentTab === 'week') renderWeekView();
+  if (currentTab === 'week') renderMonthView();
   if (currentTab === 'report') {
     renderReport();
     renderReporteFinal();
@@ -726,23 +744,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTodayView();
   });
 
-  // Day selector (week view)
-  document.getElementById('day-selector').addEventListener('change', e => {
-    currentDay = parseInt(e.target.value);
-    renderWeekView();
-  });
-
-  document.getElementById('prev-day').addEventListener('click', () => {
-    currentDay = (currentDay - 1 + 7) % 7;
-    document.getElementById('day-selector').value = currentDay;
-    renderWeekView();
-  });
-
-  document.getElementById('next-day').addEventListener('click', () => {
-    currentDay = (currentDay + 1) % 7;
-    document.getElementById('day-selector').value = currentDay;
-    renderWeekView();
-  });
+  // Month navigation
+  document.getElementById('prev-month').addEventListener('click', prevMonth);
+  document.getElementById('next-month').addEventListener('click', nextMonth);
 
   // Modal (Hoy)
   document.getElementById('modal-close').addEventListener('click', closeModal);

@@ -44,9 +44,16 @@
       <div id="today-product-list" class="product-list"></div>
     </div>
 
-    <!-- ====== TAB SEMANA ====== -->
+    <!-- ====== TAB MES ====== -->
     <div id="view-week" class="view">
-      <div class="cal-header">Toque un día para ver su detalle</div>
+      <div class="month-header">
+        <button id="prev-month" class="month-nav-btn">←</button>
+        <span id="month-label"></span>
+        <button id="next-month" class="month-nav-btn">→</button>
+      </div>
+      <div class="cal-dow-labels">
+        <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+      </div>
       <div class="cal-grid" id="cal-grid"></div>
       <div id="cal-detail" class="cal-detail">
         <div class="cal-detail-header" id="cal-detail-header"></div>
