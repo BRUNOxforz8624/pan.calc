@@ -35,47 +35,43 @@ const PRODUCTS = [
 ];
 
 // ============================
+// FIREBASE
+// ============================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyXXXXXXXXXXXXXXX",          // <-- REEMPLAZA
+  authDomain: "tu-proyecto.firebaseapp.com", // <-- REEMPLAZA
+  databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com", // <-- REEMPLAZA
+  projectId: "tu-proyecto",                  // <-- REEMPLAZA
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+const prodRef = db.ref('production');
+const batchRef = db.ref('batch');
+
+// ============================
 // ESTADO
 // ============================
-const PROD_KEY = 'pancalc_v2_production';
-const WEEK_KEY = 'pancalc_v2_week';
-
 function getTodayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function getDayIndex() {
-  // js getDay(): 0=Sun,1=Mon,...6=Sat -> map to 6,0,1,2,3,4,5
   return (new Date().getDay() + 6) % 7;
 }
 
-let production = {}; // { "YYYY-MM-DD": { "Product Name": count } }
+let production = {};
 let currentDay = getDayIndex();
 let currentTab = 'today';
 let searchQuery = '';
-
-function loadProduction() {
-  try {
-    const saved = localStorage.getItem(PROD_KEY);
-    if (saved) production = JSON.parse(saved);
-  } catch(e) {}
-}
-
-function saveProduction() {
-  localStorage.setItem(PROD_KEY, JSON.stringify(production));
-}
+let dbReady = false;
+let pendingRender = false;
 
 function getTodayProd() {
   const key = getTodayKey();
   if (!production[key]) production[key] = {};
   return production[key];
-}
-
-function getProductCount(productName, dayKey) {
-  if (!dayKey) dayKey = getTodayKey();
-  if (!production[dayKey]) return 0;
-  return production[dayKey][productName] || 0;
 }
 
 function getTarget(p, dayIdx) {
@@ -87,33 +83,43 @@ function getWeeklyTarget(p) {
   return getTarget(p,0)+getTarget(p,1)+getTarget(p,2)+getTarget(p,3)+getTarget(p,4)+getTarget(p,5)+getTarget(p,6);
 }
 
-function getWeeklyProduced(p, productionData) {
-  let total = 0;
-  DAYS.forEach((_, i) => {
-    // get date keys for the current week
-    // approximate: we don't know exact dates, so we sum what's in production
-  });
-  // simpler: sum across all production entries for this product
-  Object.values(productionData).forEach(dayProd => {
-    total += dayProd[p.name] || 0;
-  });
-  return total;
-}
-
 function addProduction(productName, amount) {
   const todayProd = getTodayProd();
   todayProd[productName] = (todayProd[productName] || 0) + amount;
   if (todayProd[productName] <= 0) delete todayProd[productName];
-  saveProduction();
-  renderAll();
+  prodRef.child(getTodayKey()).set(todayProd);
 
   try { navigator.vibrate(10); } catch(e) {}
 
-  // Enviar a ThingSpeak cada 5 pulsaciones (evita spam)
-  const todayProd2 = getTodayProd();
-  const totalSimple = Object.values(todayProd2).reduce((s, v) => s + v, 0);
+  const totalSimple = Object.values(getTodayProd()).reduce((s, v) => s + v, 0);
   if (totalSimple % 5 === 0 || amount < 0) sendToThingSpeak();
 }
+
+// Migrar datos de localStorage a Firebase (1 vez)
+function migrateFromLocal() {
+  try {
+    const saved = localStorage.getItem('pancalc_v2_production');
+    if (saved) {
+      const data = JSON.parse(saved);
+      prodRef.set(data);
+      localStorage.removeItem('pancalc_v2_production');
+    }
+    const savedBatch = localStorage.getItem('pancalc_batch');
+    if (savedBatch) {
+      batchRef.set(JSON.parse(savedBatch));
+      localStorage.removeItem('pancalc_batch');
+    }
+  } catch(e) {}
+}
+
+// Escuchar cambios en Firebase (tiempo real)
+prodRef.on('value', snap => {
+  production = snap.val() || {};
+  dbReady = true;
+  if (pendingRender) { renderAll(); pendingRender = false; }
+  else if (currentTab === 'today') renderTodayView();
+  else if (currentTab === 'report') { renderReport(); renderReporteFinal(); }
+});
 
 // ============================
 // RENDER
@@ -351,16 +357,7 @@ function switchTab(tab) {
 // ============================
 // PRODUCCIÓN (TANDAS)
 // ============================
-const BATCH_KEY = 'pancalc_batch';
 let batchData = {};
-
-function loadBatch() {
-  try { const s = localStorage.getItem(BATCH_KEY); if (s) batchData = JSON.parse(s); } catch(e) {}
-}
-
-function saveBatch() {
-  localStorage.setItem(BATCH_KEY, JSON.stringify(batchData));
-}
 
 function getTodayBatch() {
   const key = getTodayKey();
@@ -433,7 +430,7 @@ function saveTandas() {
     }
   }
   pb.mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
-  saveBatch();
+  batchRef.child(getTodayKey()).child(editingProduct).set(pb);
   closeTandaModal();
   renderProduction();
   sendToThingSpeak();
@@ -535,6 +532,13 @@ function renderReporteFinal() {
   list.innerHTML = html;
 }
 
+// Escuchar cambios en batch (tiempo real)
+batchRef.on('value', snap => {
+  batchData = snap.val() || {};
+  if (currentTab === 'production') renderProduction();
+  if (currentTab === 'report') renderReporteFinal();
+});
+
 // ============================
 // THINGSPEAK INTEGRATION
 // ============================
@@ -590,8 +594,11 @@ function sendToThingSpeak() {
 // EVENTS
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
-  loadProduction();
-  loadBatch();
+  migrateFromLocal();
+
+  // Si Firebase ya cargó datos, renderiza; sino espera el listener
+  if (dbReady) renderAll();
+  else pendingRender = true;
 
   // Tabs
   document.querySelectorAll('.tab').forEach(tab => {
