@@ -501,7 +501,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal (Hoy)
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.querySelectorAll('.modal-backdrop').forEach(el => {
-    el.addEventListener('click', closeModal);
+    el.addEventListener('click', (e) => {
+      const modal = e.currentTarget.closest('.modal');
+      if (modal) modal.classList.add('hidden');
+    });
   });
   document.getElementById('modal-set-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') modalSetValue();
@@ -510,12 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal Tandas
   document.getElementById('tanda-modal-close').addEventListener('click', closeTandaModal);
   document.getElementById('tanda-mermas-input').addEventListener('input', updateTandaSummary);
-  // Auto-update summary when qty changes
-  for (let i = 0; i < 5; i++) {
-    document.addEventListener('input', e => {
-      if (e.target.id === `tanda-qty-${i}` || e.target.id === `tanda-time-${i}`) updateTandaSummary();
-    });
-  }
+  document.getElementById('tanda-list').addEventListener('input', updateTandaSummary);
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
