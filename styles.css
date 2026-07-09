@@ -842,6 +842,7 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .cal-arrow-btn { background: #2a2a4a; color: #e0e0e0; }
   .cal-arrow-btn:active { background: #3a3a5a; }
   .cal-date-input { background: #16213e; border-color: #dda15e; color: #e0e0e0; }
+  .cal-picker-info { color: #666; }
   .cal-detail-header { color: #e0e0e0; }
   .report-stat { background: #16213e; }
   .report-stat-value { color: #e0e0e0; }
