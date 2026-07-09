@@ -38,10 +38,10 @@ const PRODUCTS = [
 // FIREBASE
 // ============================
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyXXXXXXXXXXXXXXX",          // <-- REEMPLAZA
-  authDomain: "tu-proyecto.firebaseapp.com", // <-- REEMPLAZA
-  databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com", // <-- REEMPLAZA
-  projectId: "tu-proyecto",                  // <-- REEMPLAZA
+  apiKey: "AIzaSyCo-Qai0Vh7tR6p7Q-_ppGo5Pskp2L7do8",
+  authDomain: "pancal-25c84.firebaseapp.com",
+  databaseURL: "https://pancal-25c84-default-rtdb.firebaseio.com",
+  projectId: "pancal-25c84",
 };
 
 firebase.initializeApp(FIREBASE_CONFIG);
