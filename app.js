@@ -118,6 +118,7 @@ function renderAll() {
   renderTodayView();
   renderWeekView();
   renderReport();
+  renderProduction();
 }
 
 function renderDate() {
@@ -333,6 +334,132 @@ function switchTab(tab) {
   if (tab === 'today') renderTodayView();
   if (tab === 'week') renderWeekView();
   if (tab === 'report') renderReport();
+  if (tab === 'production') renderProduction();
+}
+
+// ============================
+// PRODUCCIÓN (TANDAS)
+// ============================
+const BATCH_KEY = 'pancalc_batch';
+let batchData = {};
+
+function loadBatch() {
+  try { const s = localStorage.getItem(BATCH_KEY); if (s) batchData = JSON.parse(s); } catch(e) {}
+}
+
+function saveBatch() {
+  localStorage.setItem(BATCH_KEY, JSON.stringify(batchData));
+}
+
+function getTodayBatch() {
+  const key = getTodayKey();
+  if (!batchData[key]) batchData[key] = {};
+  return batchData[key];
+}
+
+function getProductBatch(productName) {
+  const day = getTodayBatch();
+  if (!day[productName]) {
+    day[productName] = { tandas: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}], mermas: 0 };
+  }
+  return day[productName];
+}
+
+function calcTandaTotal(tandas) {
+  return tandas.reduce((s, t) => s + (parseFloat(t.qty) || 0), 0);
+}
+
+let editingProduct = '';
+
+function openTandaModal(productName) {
+  editingProduct = productName;
+  document.getElementById('tanda-product-name').textContent = productName;
+
+  const pb = getProductBatch(productName);
+  const list = document.getElementById('tanda-list');
+
+  let html = '';
+  pb.tandas.forEach((t, i) => {
+    html += `
+      <div class="tanda-row">
+        <span class="tanda-row-label">Tanda ${i + 1}</span>
+        <input type="time" id="tanda-time-${i}" value="${t.time || ''}">
+        <input type="number" id="tanda-qty-${i}" min="0" value="${t.qty || ''}" inputmode="numeric" placeholder="Cant">
+      </div>`;
+  });
+  list.innerHTML = html;
+
+  document.getElementById('tanda-mermas-input').value = pb.mermas || 0;
+  updateTandaSummary();
+  document.getElementById('tanda-modal').classList.remove('hidden');
+
+  // Auto-focus first empty time
+  setTimeout(() => {
+    const firstTime = document.getElementById('tanda-time-0');
+    if (firstTime) firstTime.focus();
+  }, 300);
+}
+
+function updateTandaSummary() {
+  let total = 0;
+  for (let i = 0; i < 5; i++) {
+    const qtyEl = document.getElementById(`tanda-qty-${i}`);
+    if (qtyEl) total += parseFloat(qtyEl.value) || 0;
+  }
+  document.getElementById('tanda-total').textContent = total.toFixed(0);
+
+  const mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
+  document.getElementById('tanda-neto').textContent = Math.max(0, total - mermas).toFixed(0);
+}
+
+function saveTandas() {
+  const pb = getProductBatch(editingProduct);
+  for (let i = 0; i < 5; i++) {
+    const timeEl = document.getElementById(`tanda-time-${i}`);
+    const qtyEl = document.getElementById(`tanda-qty-${i}`);
+    if (timeEl && qtyEl) {
+      pb.tandas[i] = { time: timeEl.value, qty: parseFloat(qtyEl.value) || 0 };
+    }
+  }
+  pb.mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
+  saveBatch();
+  closeTandaModal();
+  renderProduction();
+}
+
+function closeTandaModal() {
+  document.getElementById('tanda-modal').classList.add('hidden');
+}
+
+function renderProduction() {
+  const container = document.getElementById('prod-product-list');
+  const dateEl = document.getElementById('prod-date');
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = new Date().toLocaleDateString('es-ES', opts);
+  dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+  const todayBatch = getTodayBatch();
+
+  let html = '';
+  PRODUCTS.forEach(p => {
+    const pb = todayBatch[p.name];
+    const total = pb ? calcTandaTotal(pb.tandas) : 0;
+    const mermas = pb ? (pb.mermas || 0) : 0;
+    const neto = Math.max(0, total - mermas);
+    const hasData = total > 0 || mermas > 0;
+
+    html += `
+      <div class="prod-card" onclick="openTandaModal('${p.name.replace(/'/g, "\\'")}')">
+        <div class="prod-card-name">${p.name} ${hasData ? '' : '— toca para agregar'}</div>
+        <div class="prod-card-stats">
+          <span class="prod-card-stat">Total: <strong>${total.toFixed(0)}</strong></span>
+          <span class="prod-card-stat mermas">Mermas: <strong>${mermas.toFixed(0)}</strong></span>
+          <span class="prod-card-stat neto">Neto: <strong>${neto.toFixed(0)}</strong></span>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html || '<div class="prod-empty">Toca un producto para registrar tandas</div>';
 }
 
 // ============================
@@ -340,6 +467,7 @@ function switchTab(tab) {
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
   loadProduction();
+  loadBatch();
 
   // Tabs
   document.querySelectorAll('.tab').forEach(tab => {
@@ -370,16 +498,28 @@ document.addEventListener('DOMContentLoaded', () => {
     renderWeekView();
   });
 
-  // Modal
+  // Modal (Hoy)
   document.getElementById('modal-close').addEventListener('click', closeModal);
-  document.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+  document.querySelectorAll('.modal-backdrop').forEach(el => {
+    el.addEventListener('click', closeModal);
+  });
   document.getElementById('modal-set-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') modalSetValue();
   });
 
+  // Modal Tandas
+  document.getElementById('tanda-modal-close').addEventListener('click', closeTandaModal);
+  document.getElementById('tanda-mermas-input').addEventListener('input', updateTandaSummary);
+  // Auto-update summary when qty changes
+  for (let i = 0; i < 5; i++) {
+    document.addEventListener('input', e => {
+      if (e.target.id === `tanda-qty-${i}` || e.target.id === `tanda-time-${i}`) updateTandaSummary();
+    });
+  }
+
   // Keyboard escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeTandaModal(); }
   });
 
   renderAll();

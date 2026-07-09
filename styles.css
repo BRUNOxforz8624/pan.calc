@@ -352,6 +352,170 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .report-row.done .report-row-missing { color: #606c38; }
 
+/* ---- PRODUCCIÓN / TANDAS ---- */
+.prod-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 4px;
+  flex-shrink: 0;
+}
+
+.prod-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #283618;
+}
+
+.prod-header-date {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.prod-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.prod-card:active { transform: scale(0.99); }
+
+.prod-card-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #283618;
+  margin-bottom: 4px;
+}
+
+.prod-card-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.78rem;
+}
+
+.prod-card-stat {
+  color: #666;
+}
+
+.prod-card-stat strong {
+  color: #283618;
+}
+
+.prod-card-stat.mermas strong { color: #9c6644; }
+.prod-card-stat.neto strong { color: #606c38; }
+
+.prod-empty {
+  text-align: center;
+  color: #999;
+  padding: 40px 16px;
+  font-size: 0.9rem;
+}
+
+/* Tanda modal */
+.tanda-list {
+  margin-bottom: 16px;
+}
+
+.tanda-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.tanda-row-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #666;
+  min-width: 60px;
+}
+
+.tanda-row input[type="time"],
+.tanda-row input[type="number"] {
+  padding: 8px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #283618;
+  outline: none;
+  font-weight: 600;
+  transition: border-color 0.2s;
+}
+
+.tanda-row input[type="time"]:focus,
+.tanda-row input[type="number"]:focus {
+  border-color: #bc6c25;
+}
+
+.tanda-row input[type="time"] { flex: 1; }
+.tanda-row input[type="number"] { width: 80px; text-align: center; }
+
+.tanda-summary {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.tanda-total-row,
+.tanda-mermas-row,
+.tanda-neto-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.tanda-total-row strong,
+.tanda-neto-row strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #283618;
+}
+
+.tanda-neto-row strong { color: #606c38; }
+
+.tanda-mermas-row input {
+  width: 80px;
+  padding: 6px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-align: center;
+  font-weight: 700;
+  color: #9c6644;
+  background: #fff;
+  outline: none;
+}
+
+.tanda-mermas-row input:focus {
+  border-color: #bc6c25;
+}
+
+.tanda-save-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  background: #606c38;
+  color: #fff;
+  cursor: pointer;
+}
+
+.tanda-save-btn:active { background: #4a5530; }
+
 /* ---- MODAL ---- */
 .modal {
   position: fixed;
@@ -574,6 +738,22 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .report-stat-value { color: #e0e0e0; }
   .report-row { border-color: #2a2a4a; }
   .report-row-name { color: #e0e0e0; }
+  .prod-title { color: #e0e0e0; }
+  .prod-card { background: #16213e; }
+  .prod-card-name { color: #e0e0e0; }
+  .prod-card-stat { color: #888; }
+  .prod-card-stat strong { color: #e0e0e0; }
+  .prod-card-stat.mermas strong { color: #dda15e; }
+  .prod-card-stat.neto strong { color: #a3b18a; }
+  .tanda-row { background: #0f3460; }
+  .tanda-row-label { color: #999; }
+  .tanda-row input[type="time"],
+  .tanda-row input[type="number"] { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
+  .tanda-summary { background: #0f3460; }
+  .tanda-total-row, .tanda-mermas-row, .tanda-neto-row { color: #999; }
+  .tanda-total-row strong, .tanda-neto-row strong { color: #e0e0e0; }
+  .tanda-neto-row strong { color: #a3b18a; }
+  .tanda-mermas-row input { background: #16213e; border-color: #2a2a4a; color: #dda15e; }
   .nav-arrow { background: #2a2a4a; color: #e0e0e0; }
   .nav-arrow:active { background: #3a3a5a; }
   .modal-backdrop { background: rgba(0,0,0,0.6); }

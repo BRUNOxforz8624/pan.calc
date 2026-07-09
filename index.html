@@ -21,6 +21,7 @@
       <button class="tab active" data-tab="today">Hoy</button>
       <button class="tab" data-tab="week">Semana</button>
       <button class="tab" data-tab="report">Reporte</button>
+      <button class="tab" data-tab="production">Producción</button>
     </div>
 
     <!-- ====== TAB HOY ====== -->
@@ -76,6 +77,44 @@
       </div>
 
       <div id="report-product-list" class="report-list"></div>
+    </div>
+
+    <!-- ====== TAB PRODUCCIÓN ====== -->
+    <div id="view-production" class="view">
+      <div class="prod-header">
+        <span class="prod-title">Tandas del día</span>
+        <span class="prod-header-date" id="prod-date"></span>
+      </div>
+      <div id="prod-product-list" class="product-list"></div>
+    </div>
+
+    <!-- ====== MODAL TANDAS ====== -->
+    <div id="tanda-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="tanda-product-name"></h3>
+          <button id="tanda-modal-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="tanda-list" id="tanda-list"></div>
+          <div class="tanda-summary">
+            <div class="tanda-total-row">
+              <span>Total tandas:</span>
+              <strong id="tanda-total">0</strong>
+            </div>
+            <div class="tanda-mermas-row">
+              <span>Mermas (quemados/dañados):</span>
+              <input type="number" id="tanda-mermas-input" min="0" value="0" inputmode="numeric">
+            </div>
+            <div class="tanda-neto-row">
+              <span>Neto:</span>
+              <strong id="tanda-neto">0</strong>
+            </div>
+          </div>
+          <button class="tanda-save-btn" onclick="saveTandas()">Guardar</button>
+        </div>
+      </div>
     </div>
 
     <!-- ====== MODAL PRODUCTO ====== -->
