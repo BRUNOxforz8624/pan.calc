@@ -531,6 +531,15 @@ function closeTandaModal() {
   document.getElementById('tanda-modal').classList.add('hidden');
 }
 
+function resetAllData() {
+  if (!confirm('¿Borrar TODOS los datos de producción y tandas? Esta acción no se puede deshacer.')) return;
+  if (!confirm('¿Seguro? Se perderá todo el registro del día.')) return;
+  prodRef.set({});
+  batchRef.set({});
+  localStorage.removeItem('pancalc_v2_production');
+  localStorage.removeItem('pancalc_batch');
+}
+
 function renderProduction() {
   const container = document.getElementById('prod-product-list');
   const dateEl = document.getElementById('prod-date');

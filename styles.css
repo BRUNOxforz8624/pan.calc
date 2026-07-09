@@ -435,6 +435,23 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   flex-shrink: 0;
 }
 
+.prod-reset-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #e9ecef;
+  color: #999;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.prod-reset-btn:active { background: #ced4da; }
+
 .prod-title {
   font-size: 1.1rem;
   font-weight: 700;
@@ -842,6 +859,8 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .report-row-name { color: #e0e0e0; }
   .subtab.active { background: #16213e; color: #dda15e; border-bottom-color: #dda15e; }
   .prod-title { color: #e0e0e0; }
+  .prod-reset-btn { background: #2a2a4a; color: #666; }
+  .prod-reset-btn:active { background: #3a3a5a; }
   .prod-card { background: #16213e; }
   .prod-card-name { color: #e0e0e0; }
   .prod-card-stat { color: #888; }
