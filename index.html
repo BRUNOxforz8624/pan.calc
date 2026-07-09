@@ -58,25 +58,52 @@
     <div id="view-report" class="view">
       <div class="report-header">
         <div class="report-date" id="report-date"></div>
+      </div>
+
+      <div class="report-subtabs">
+        <button class="subtab active" data-subtab="report-prod">Producción</button>
+        <button class="subtab" data-subtab="report-final">Final</button>
+      </div>
+
+      <!-- Subvista: Producción -->
+      <div id="report-prod" class="report-subview active">
         <div class="report-title">Producción del día</div>
+        <div class="report-stats">
+          <div class="report-stat">
+            <span class="report-stat-value" id="report-total-target">0</span>
+            <span class="report-stat-label">Meta total</span>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-value" id="report-total-produced">0</span>
+            <span class="report-stat-label">Producido</span>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-value" id="report-total-missing">0</span>
+            <span class="report-stat-label">Faltan</span>
+          </div>
+        </div>
+        <div id="report-product-list" class="report-list"></div>
       </div>
 
-      <div class="report-stats">
-        <div class="report-stat">
-          <span class="report-stat-value" id="report-total-target">0</span>
-          <span class="report-stat-label">Meta total</span>
+      <!-- Subvista: Final -->
+      <div id="report-final" class="report-subview">
+        <div class="report-title">Reporte Final</div>
+        <div class="report-stats">
+          <div class="report-stat">
+            <span class="report-stat-value" id="final-total-tandas">0</span>
+            <span class="report-stat-label">Total tandas</span>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-value" id="final-total-mermas">0</span>
+            <span class="report-stat-label">Mermas</span>
+          </div>
+          <div class="report-stat">
+            <span class="report-stat-value" id="final-total-neto">0</span>
+            <span class="report-stat-label">Neto</span>
+          </div>
         </div>
-        <div class="report-stat">
-          <span class="report-stat-value" id="report-total-produced">0</span>
-          <span class="report-stat-label">Producido</span>
-        </div>
-        <div class="report-stat">
-          <span class="report-stat-value" id="report-total-missing">0</span>
-          <span class="report-stat-label">Faltan</span>
-        </div>
+        <div id="report-final-list" class="report-list"></div>
       </div>
-
-      <div id="report-product-list" class="report-list"></div>
     </div>
 
     <!-- ====== TAB PRODUCCIÓN ====== -->

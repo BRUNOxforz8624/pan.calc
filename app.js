@@ -118,7 +118,13 @@ function renderAll() {
   renderTodayView();
   renderWeekView();
   renderReport();
+  renderReporteFinal();
   renderProduction();
+}
+
+function switchReportSubtab(subtab) {
+  document.querySelectorAll('.subtab').forEach(t => t.classList.toggle('active', t.dataset.subtab === subtab));
+  document.querySelectorAll('.report-subview').forEach(v => v.classList.toggle('active', v.id === subtab));
 }
 
 function renderDate() {
@@ -438,28 +444,89 @@ function renderProduction() {
   const dateStr = new Date().toLocaleDateString('es-ES', opts);
   dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
+  const todayIdx = getDayIndex();
   const todayBatch = getTodayBatch();
 
   let html = '';
   PRODUCTS.forEach(p => {
+    const target = getTarget(p, todayIdx);
+    if (target === 0) return;
+
     const pb = todayBatch[p.name];
     const total = pb ? calcTandaTotal(pb.tandas) : 0;
     const mermas = pb ? (pb.mermas || 0) : 0;
     const neto = Math.max(0, total - mermas);
-    const hasData = total > 0 || mermas > 0;
+    const pct = target > 0 ? Math.min(100, (neto / target) * 100) : 0;
+    const isDone = neto >= target;
+    const dashArray = pct.toFixed(0);
 
     html += `
       <div class="prod-card" onclick="openTandaModal('${p.name.replace(/'/g, "\\'")}')">
-        <div class="prod-card-name">${p.name} ${hasData ? '' : '— toca para agregar'}</div>
-        <div class="prod-card-stats">
-          <span class="prod-card-stat">Total: <strong>${total.toFixed(0)}</strong></span>
-          <span class="prod-card-stat mermas">Mermas: <strong>${mermas.toFixed(0)}</strong></span>
-          <span class="prod-card-stat neto">Neto: <strong>${neto.toFixed(0)}</strong></span>
+        <div class="prod-card-left">
+          <div class="prod-card-name">${p.name}</div>
+          <div class="prod-card-stats">
+            <span class="prod-card-stat">Total: <strong>${total.toFixed(0)}</strong></span>
+            <span class="prod-card-stat mermas">Mermas: <strong>${mermas.toFixed(0)}</strong></span>
+            <span class="prod-card-stat neto">Neto: <strong>${neto.toFixed(0)}</strong></span>
+          </div>
+        </div>
+        <div class="prod-card-circle ${isDone ? 'done' : ''}">
+          <svg viewBox="0 0 36 36">
+            <path class="prod-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="prod-circle-fill" stroke-dasharray="${dashArray}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <text x="18" y="20.5" class="prod-circle-text">${Math.round(pct)}%</text>
+          </svg>
         </div>
       </div>`;
   });
 
   container.innerHTML = html || '<div class="prod-empty">Toca un producto para registrar tandas</div>';
+}
+
+function renderReporteFinal() {
+  const list = document.getElementById('report-final-list');
+  const todayIdx = getDayIndex();
+  const todayBatch = getTodayBatch();
+
+  let totalTandas = 0, totalMermas = 0, totalNeto = 0;
+
+  const rows = [];
+  PRODUCTS.forEach(p => {
+    const target = getTarget(p, todayIdx);
+    if (target === 0) return;
+
+    const pb = todayBatch[p.name];
+    const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
+    const mermas = pb ? (pb.mermas || 0) : 0;
+    const neto = Math.max(0, tandas - mermas);
+
+    totalTandas += tandas;
+    totalMermas += mermas;
+    totalNeto += neto;
+
+    rows.push({ name: p.name, target, tandas, mermas, neto });
+  });
+
+  document.getElementById('final-total-tandas').textContent = totalTandas.toFixed(0);
+  document.getElementById('final-total-mermas').textContent = totalMermas.toFixed(0);
+  document.getElementById('final-total-neto').textContent = totalNeto.toFixed(0);
+
+  let html = rows.map(r => {
+    const pct = r.target > 0 ? Math.min(100, (r.neto / r.target) * 100) : 0;
+    const isDone = r.neto >= r.target;
+    return `
+      <div class="report-row ${isDone ? 'done' : ''}">
+        <span class="report-row-name">${r.name}</span>
+        <span class="report-row-numbers">
+          <span class="report-row-produced">${r.neto.toFixed(0)}</span>
+          <span class="report-row-target"> / ${r.target.toFixed(1)}</span>
+          <span style="color:#999;font-size:0.7rem"> (m:${r.mermas.toFixed(0)})</span>
+        </span>
+        <span class="report-row-missing">${isDone ? '✅' : Math.max(0, r.target - r.neto).toFixed(1)}</span>
+      </div>`;
+  }).join('');
+
+  list.innerHTML = html;
 }
 
 // ============================
@@ -472,6 +539,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tabs
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  // Report sub-tabs
+  document.querySelectorAll('.subtab').forEach(tab => {
+    tab.addEventListener('click', () => switchReportSubtab(tab.dataset.subtab));
   });
 
   // Search
