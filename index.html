@@ -14,7 +14,10 @@
   <div id="app">
     <header>
       <h1>🥖 PanCalc</h1>
-      <span id="current-date"></span>
+      <div class="header-right">
+        <span id="current-date"></span>
+        <button id="btn-manage" class="gear-btn">⚙️</button>
+      </div>
     </header>
 
     <div id="tab-bar">
@@ -117,6 +120,21 @@
         <button class="prod-reset-btn" onclick="resetAllData()">✕</button>
       </div>
       <div id="prod-product-list" class="product-list"></div>
+    </div>
+
+    <!-- ====== MODAL GESTIÓN PRODUCTOS ====== -->
+    <div id="manage-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Gestionar Productos</h3>
+          <button id="manage-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="padding-bottom: 60px">
+          <button id="manage-add-btn" class="manage-add-btn">+ Añadir producto</button>
+          <div id="manage-list" class="manage-list"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ====== MODAL DÍA ====== -->

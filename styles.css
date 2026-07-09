@@ -28,7 +28,15 @@ header {
 }
 
 header h1 { font-size: 1.4rem; color: #bc6c25; }
+.header-right { display: flex; align-items: center; gap: 6px; }
 #current-date { font-size: 0.8rem; color: #999; }
+.gear-btn {
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: transparent; font-size: 1.2rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.gear-btn:active { background: #e9ecef; }
 
 /* ---- TAB BAR ---- */
 #tab-bar {
@@ -629,6 +637,66 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .tanda-save-btn:active { background: #4a5530; }
 
+/* ---- GESTIÓN PRODUCTOS ---- */
+.manage-list { max-height: 60vh; overflow-y: auto; }
+.manage-item {
+  background: #f8f9fa;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.manage-add-btn {
+  width: 100%; padding: 12px; border: 2px dashed #bc6c25;
+  border-radius: 12px; background: transparent;
+  font-size: 0.95rem; font-weight: 700; color: #bc6c25;
+  cursor: pointer; margin-bottom: 8px;
+}
+.manage-add-btn:active { background: rgba(188,108,37,0.08); }
+.manage-item-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px; cursor: pointer;
+}
+.manage-item-name { flex: 1; font-weight: 600; font-size: 0.85rem; color: #283618; }
+.manage-item-avg { font-size: 0.7rem; color: #999; white-space: nowrap; }
+.manage-delete-btn {
+  width: 28px; height: 28px; border: none; border-radius: 50%;
+  background: #e9ecef; color: #999; font-size: 0.8rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.manage-delete-btn:active { background: #ced4da; }
+.manage-edit {
+  display: none; padding: 0 12px 12px;
+}
+.manage-edit.open { display: block; }
+.manage-name-input {
+  width: 100%; padding: 8px 10px; border: 2px solid #e9ecef;
+  border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+  margin-bottom: 8px; outline: none; background: #fff; color: #283618;
+}
+.manage-name-input:focus { border-color: #bc6c25; }
+.manage-day-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-bottom: 8px;
+}
+.manage-day-grid label {
+  display: flex; flex-direction: column; align-items: center;
+  font-size: 0.6rem; color: #999; font-weight: 600; gap: 2px;
+}
+.manage-day-grid input {
+  width: 100%; padding: 6px 2px; text-align: center;
+  border: 2px solid #e9ecef; border-radius: 6px;
+  font-size: 0.75rem; font-weight: 700; outline: none;
+  background: #fff; color: #283618;
+}
+.manage-day-grid input:focus { border-color: #bc6c25; }
+.manage-save-btn {
+  width: 100%; padding: 10px; border: none; border-radius: 8px;
+  background: #606c38; color: #fff; font-size: 0.9rem;
+  font-weight: 700; cursor: pointer;
+}
+.manage-save-btn:active { background: #4a5530; }
+
 /* ---- MODAL ---- */
 .modal {
   position: fixed;
@@ -881,6 +949,15 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .tanda-neto-row strong { color: #a3b18a; }
   .tanda-mermas-row input { background: #16213e; border-color: #2a2a4a; color: #dda15e; }
   .modal-backdrop { background: rgba(0,0,0,0.6); }
+  .gear-btn:active { background: #2a2a4a; }
+  .manage-item { background: #0f3460; }
+  .manage-add-btn { border-color: #dda15e; color: #dda15e; }
+  .manage-add-btn:active { background: rgba(221,161,94,0.1); }
+  .manage-item-name { color: #e0e0e0; }
+  .manage-delete-btn { background: #2a2a4a; color: #666; }
+  .manage-delete-btn:active { background: #3a3a5a; }
+  .manage-name-input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
+  .manage-day-grid input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
   .cal-detail-body > div:first-child > div { background: #16213e !important; }
   .cal-detail-body > div:first-child > div strong { color: #e0e0e0 !important; }
   .cal-detail-body > div:first-child > div strong[style*="color:#9c6644"] { color: #dda15e !important; }

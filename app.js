@@ -2,8 +2,9 @@
 // DATOS DE PRODUCTOS
 // ============================
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
 
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   { name: "PAN FRANCES DELEITE UND",     mon: 889.6, tue: 974.4, wed: 836.0, thu: 974.0, fri: 860.0, sat: 694.0, sun: 690.0, avg: 845.4 },
   { name: "CANILLAS DELEITE UND",        mon: 197.4, tue: 227.4, wed: 195.0, thu: 181.5, fri: 225.0, sat: 209.3, sun: 153.0, avg: 198.4 },
   { name: "PAN CIABATTA",                mon:  79.4, tue:  83.4, wed:  66.0, thu:  83.8, fri:  73.3, sat:  80.8, sun:  57.5, avg:  74.9 },
@@ -34,6 +35,8 @@ const PRODUCTS = [
   { name: "MASA HOJALDRE X KILO",        mon:   0.2, tue:   0.0, wed:   0.0, thu:   0.0, fri:   0.0, sat:   0.2, sun:   0.0, avg:   0.1 },
 ];
 
+let PRODUCTS = [...DEFAULT_PRODUCTS];
+
 // ============================
 // FIREBASE
 // ============================
@@ -48,6 +51,7 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 const prodRef = db.ref('production');
 const batchRef = db.ref('batch');
+const productsRef = db.ref('products');
 
 // ============================
 // ESTADO
@@ -75,8 +79,7 @@ function getTodayProd() {
 }
 
 function getTarget(p, dayIdx) {
-  const map = ['mon','tue','wed','thu','fri','sat','sun'];
-  return p[map[dayIdx]] || 0;
+  return p[DAY_KEYS[dayIdx]] || 0;
 }
 
 function getWeeklyTarget(p) {
@@ -314,6 +317,112 @@ function openDayModal(dateKey) {
 
 function closeDayModal() {
   document.getElementById('day-modal').classList.add('hidden');
+}
+
+// ============================
+// GESTIÓN DE PRODUCTOS
+// ============================
+function loadProducts() {
+  productsRef.once('value', snap => {
+    const data = snap.val();
+    if (data && data.length) {
+      PRODUCTS = data;
+    } else {
+      productsRef.set(DEFAULT_PRODUCTS);
+      PRODUCTS = [...DEFAULT_PRODUCTS];
+    }
+    renderAll();
+  });
+}
+
+function saveProducts() {
+  productsRef.set(PRODUCTS);
+  renderAll();
+}
+
+function openManageModal() {
+  renderManageModal();
+  document.getElementById('manage-modal').classList.remove('hidden');
+}
+
+function closeManageModal() {
+  document.getElementById('manage-modal').classList.add('hidden');
+}
+
+function renderManageModal() {
+  const list = document.getElementById('manage-list');
+  let html = '';
+  PRODUCTS.forEach((p, i) => {
+    const avg = DAY_KEYS.reduce((s, k) => s + (p[k] || 0), 0) / 7;
+    html += `
+      <div class="manage-item">
+        <div class="manage-item-header" onclick="toggleManageEdit(${i})">
+          <span class="manage-item-name">${p.name}</span>
+          <span class="manage-item-avg">Prom: ${avg.toFixed(1)}</span>
+          <button class="manage-delete-btn" onclick="event.stopPropagation(); deleteProduct(${i})">✕</button>
+        </div>
+        <div class="manage-edit" id="manage-edit-${i}">
+          <input class="manage-name-input" id="manage-name-${i}" value="${p.name}" placeholder="Nombre">
+          <div class="manage-day-grid">
+            ${DAYS.map((d, di) => `
+              <label>${d.slice(0,3)} <input type="number" id="manage-val-${i}-${di}" value="${p[DAY_KEYS[di]] || ''}" step="0.1" inputmode="decimal"></label>
+            `).join('')}
+          </div>
+          <button class="manage-save-btn" onclick="saveProductEdit(${i})">Guardar</button>
+        </div>
+      </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function toggleManageEdit(i) {
+  const el = document.getElementById(`manage-edit-${i}`);
+  el.classList.toggle('open');
+}
+
+function saveProductEdit(i) {
+  const nameEl = document.getElementById(`manage-name-${i}`);
+  const newName = nameEl.value.trim();
+  if (!newName) return alert('El nombre no puede estar vacío');
+  PRODUCTS[i].name = newName;
+  DAY_KEYS.forEach((k, di) => {
+    const val = parseFloat(document.getElementById(`manage-val-${i}-${di}`).value) || 0;
+    PRODUCTS[i][k] = val;
+  });
+  PRODUCTS[i].avg = DAY_KEYS.reduce((s, k) => s + (PRODUCTS[i][k] || 0), 0) / 7;
+  saveProducts();
+  renderManageModal();
+}
+
+function addProduct() {
+  const p = { name: "Nuevo producto" };
+  DAY_KEYS.forEach(k => p[k] = 0);
+  p.avg = 0;
+  PRODUCTS.push(p);
+  saveProducts();
+  renderManageModal();
+  setTimeout(() => {
+    const last = PRODUCTS.length - 1;
+    const editEl = document.getElementById(`manage-edit-${last}`);
+    if (editEl) editEl.classList.add('open');
+    const nameInput = document.getElementById(`manage-name-${last}`);
+    if (nameInput) nameInput.focus();
+  }, 100);
+}
+
+function deleteProduct(i) {
+  if (!confirm(`¿Eliminar "${PRODUCTS[i].name}"?`)) return;
+  PRODUCTS.splice(i, 1);
+  saveProducts();
+  renderManageModal();
+}
+
+function resetDefaultProducts() {
+  if (!confirm('¿Restaurar productos por defecto? Se perderán los cambios.')) return;
+  productsRef.set(DEFAULT_PRODUCTS);
+  PRODUCTS = [...DEFAULT_PRODUCTS];
+  saveProducts();
+  renderManageModal();
 }
 
 function renderReport() {
@@ -705,6 +814,9 @@ function sendToThingSpeak() {
 document.addEventListener('DOMContentLoaded', () => {
   migrateFromLocal();
 
+  // Cargar productos desde Firebase
+  loadProducts();
+
   // Si Firebase ya cargó datos, renderiza; sino espera el listener
   if (dbReady) renderAll();
   else pendingRender = true;
@@ -744,6 +856,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') modalSetValue();
   });
 
+  // Gestión de productos
+  document.getElementById('btn-manage').addEventListener('click', openManageModal);
+  document.getElementById('manage-close').addEventListener('click', closeManageModal);
+  document.getElementById('manage-add-btn').addEventListener('click', addProduct);
+
   // Modal Día
   document.getElementById('day-modal-close').addEventListener('click', closeDayModal);
 
@@ -754,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); }
+    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); }
   });
 
   renderAll();
