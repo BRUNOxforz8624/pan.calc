@@ -204,12 +204,24 @@ let selectedDateKey = getTodayKey();
 
 function renderCalView() {
   document.getElementById('cal-date-picker').value = selectedDateKey;
+  renderCalDetail();
+}
+
+function renderCalDetail() {
+  const header = document.getElementById('cal-detail-header');
+  const body = document.getElementById('cal-detail-body');
+  const [y, m, d] = selectedDateKey.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = dt.toLocaleDateString('es-ES', opts);
+  header.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+  body.innerHTML = buildDayDetailHTML(selectedDateKey);
 }
 
 function selectCalDay(dateKey) {
   selectedDateKey = dateKey;
   document.getElementById('cal-date-picker').value = dateKey;
-  openDayModal(dateKey);
+  renderCalDetail();
 }
 
 function prevDay() {

@@ -47,11 +47,14 @@
     <!-- ====== TAB CALENDARIO ====== -->
     <div id="view-week" class="view">
       <div class="cal-picker-row">
-        <button id="cal-prev-day" class="cal-arrow-btn">←</button>
+        <button id="cal-prev-day" class="cal-arrow-btn">‹</button>
         <input type="date" id="cal-date-picker" class="cal-date-input">
-        <button id="cal-next-day" class="cal-arrow-btn">→</button>
+        <button id="cal-next-day" class="cal-arrow-btn">›</button>
       </div>
-      <div class="cal-picker-info">Toca la fecha para elegir un día</div>
+      <div id="cal-detail" class="cal-detail">
+        <div class="cal-detail-header" id="cal-detail-header"></div>
+        <div id="cal-detail-body"></div>
+      </div>
     </div>
 
     <!-- ====== TAB REPORTE ====== -->
