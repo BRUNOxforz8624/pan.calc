@@ -46,12 +46,12 @@
 
     <!-- ====== TAB SEMANA ====== -->
     <div id="view-week" class="view">
-      <div class="week-nav">
-        <button id="prev-day" class="nav-arrow">&lt;</button>
-        <select id="day-selector"></select>
-        <button id="next-day" class="nav-arrow">&gt;</button>
+      <div class="cal-header">Toque un día para ver su detalle</div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="cal-detail" class="cal-detail">
+        <div class="cal-detail-header" id="cal-detail-header"></div>
+        <div id="cal-detail-body"></div>
       </div>
-      <div id="week-product-list" class="product-list"></div>
     </div>
 
     <!-- ====== TAB REPORTE ====== -->
@@ -61,7 +61,7 @@
       </div>
 
       <div class="report-subtabs">
-        <button class="subtab active" data-subtab="report-prod">Producción</button>
+        <button class="subtab active" data-subtab="report-prod">Elaboración</button>
         <button class="subtab" data-subtab="report-final">Final</button>
       </div>
 

@@ -136,6 +136,8 @@ function renderAll() {
 function switchReportSubtab(subtab) {
   document.querySelectorAll('.subtab').forEach(t => t.classList.toggle('active', t.dataset.subtab === subtab));
   document.querySelectorAll('.report-subview').forEach(v => v.classList.toggle('active', v.id === subtab));
+  if (subtab === 'report-prod') renderReport();
+  if (subtab === 'report-final') renderReporteFinal();
 }
 
 function renderDate() {
@@ -198,33 +200,122 @@ function renderTodayView() {
   document.getElementById('today-pct-text').textContent = `${totalPct}%`;
 }
 
+let selectedCalDay = getDayIndex();
+
 function renderWeekView() {
-  const container = document.getElementById('week-product-list');
-  const selector = document.getElementById('day-selector');
+  const grid = document.getElementById('cal-grid');
+  const todayIdx = getDayIndex();
 
-  selector.innerHTML = DAYS.map((d, i) =>
-    `<option value="${i}" ${i === currentDay ? 'selected' : ''}>${d}</option>`
-  ).join('');
+  // Calcular total por día
+  const dayTotals = DAYS.map((_, idx) => {
+    let total = 0;
+    PRODUCTS.forEach(p => { total += getTarget(p, idx); });
+    return total;
+  });
 
-  const dayIdx = parseInt(selector.value);
-  const isToday = dayIdx === getDayIndex();
+  let gridHtml = DAYS.map((dayName, idx) => {
+    const isToday = idx === todayIdx;
+    const isSelected = idx === selectedCalDay;
+    const isPast = false; // simplificado
 
-  let html = '';
+    // Progreso del día (batch data)
+    const dayKey = getDateKeyForDay(idx);
+    const dayBatch = batchData[dayKey] || {};
+    let totalNeto = 0;
+    PRODUCTS.forEach(p => {
+      const pb = dayBatch[p.name];
+      if (pb) totalNeto += Math.max(0, calcTandaTotal(pb.tandas) - (pb.mermas || 0));
+    });
+    const totalTarget = dayTotals[idx];
+    const pct = totalTarget > 0 ? Math.round((totalNeto / totalTarget) * 100) : 0;
+
+    return `
+      <div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalDay(${idx})">
+        <div class="cal-day-name">${dayName.slice(0,3)}</div>
+        <div class="cal-day-total">${totalTarget.toFixed(0)}</div>
+        <div class="cal-day-status">${pct}%</div>
+      </div>`;
+  }).join('');
+
+  grid.innerHTML = gridHtml;
+
+  // Mostrar detalle del día seleccionado
+  renderDayDetail(selectedCalDay);
+}
+
+function getDateKeyForDay(dayIdx) {
+  const today = new Date();
+  const diff = dayIdx - getDayIndex();
+  const d = new Date(today);
+  d.setDate(today.getDate() + diff);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function selectCalDay(idx) {
+  selectedCalDay = idx;
+  renderWeekView();
+}
+
+function renderDayDetail(dayIdx) {
+  const header = document.getElementById('cal-detail-header');
+  const body = document.getElementById('cal-detail-body');
+  const dayKey = getDateKeyForDay(dayIdx);
+  const dayBatch = batchData[dayKey] || {};
+
+  header.textContent = `${DAYS[dayIdx]} — Detalle de producción`;
+
+  let totalTandas = 0, totalMermas = 0, totalNeto = 0;
+
+  const rows = [];
   PRODUCTS.forEach(p => {
     const target = getTarget(p, dayIdx);
     if (target === 0) return;
 
-    html += `
-      <div class="product-card">
-        <div class="product-card-header">
-          <span class="product-name">${p.name}</span>
-          <span class="product-target">${target.toFixed(1)}</span>
-        </div>
-        <div style="font-size:0.75rem;color:#999;text-align:right">${isToday ? '← Hoy' : DAYS[dayIdx]}</div>
-      </div>`;
+    const pb = dayBatch[p.name];
+    const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
+    const mermas = pb ? (pb.mermas || 0) : 0;
+    const neto = Math.max(0, tandas - mermas);
+
+    totalTandas += tandas;
+    totalMermas += mermas;
+    totalNeto += neto;
+
+    rows.push({ name: p.name, target, tandas, mermas, neto });
   });
 
-  container.innerHTML = html || '<p style="text-align:center;color:#999;padding:20px">Sin productos para este día</p>';
+  let html = rows.map(r => {
+    const isDone = r.neto >= r.target;
+    const remaining = Math.max(0, r.target - r.neto);
+    return `
+      <div class="report-row ${isDone ? 'done' : ''}">
+        <span class="report-row-name">${r.name}</span>
+        <span class="report-row-numbers">
+          <span class="report-row-produced">${r.neto.toFixed(0)}</span>
+          <span class="report-row-target"> / ${r.target.toFixed(1)}</span>
+          <span style="color:#999;font-size:0.7rem"> (m:${r.mermas.toFixed(0)})</span>
+        </span>
+        <span class="report-row-missing">${isDone ? '✅' : remaining.toFixed(1)}</span>
+      </div>`;
+  }).join('');
+
+  html = `
+    <div style="display:flex;gap:6px;padding:6px 0;margin-bottom:8px">
+      <div style="flex:1;background:#fff;border-radius:8px;padding:6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <strong style="display:block;font-size:0.9rem;color:#283618">${totalTandas.toFixed(0)}</strong>
+        <span style="font-size:0.6rem;color:#999">Tandas</span>
+      </div>
+      <div style="flex:1;background:#fff;border-radius:8px;padding:6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <strong style="display:block;font-size:0.9rem;color:#9c6644">${totalMermas.toFixed(0)}</strong>
+        <span style="font-size:0.6rem;color:#999">Mermas</span>
+      </div>
+      <div style="flex:1;background:#fff;border-radius:8px;padding:6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <strong style="display:block;font-size:0.9rem;color:#606c38">${totalNeto.toFixed(0)}</strong>
+        <span style="font-size:0.6rem;color:#999">Neto</span>
+      </div>
+    </div>
+  ` + (rows.length ? html : '<p style="text-align:center;color:#999;padding:16px;font-size:0.85rem">Sin productos para este día</p>');
+
+  body.innerHTML = html;
 }
 
 function renderReport() {
@@ -489,7 +580,7 @@ function renderProduction() {
 function renderReporteFinal() {
   const list = document.getElementById('report-final-list');
   const todayIdx = getDayIndex();
-  const todayBatch = getTodayBatch();
+  const dayBatch = getTodayBatch();
 
   let totalTandas = 0, totalMermas = 0, totalNeto = 0;
 
@@ -498,7 +589,7 @@ function renderReporteFinal() {
     const target = getTarget(p, todayIdx);
     if (target === 0) return;
 
-    const pb = todayBatch[p.name];
+    const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
     const mermas = pb ? (pb.mermas || 0) : 0;
     const neto = Math.max(0, tandas - mermas);
@@ -535,9 +626,19 @@ function renderReporteFinal() {
 // Escuchar cambios en batch (tiempo real)
 batchRef.on('value', snap => {
   batchData = snap.val() || {};
-  if (currentTab === 'production') renderProduction();
-  if (currentTab === 'report') renderReporteFinal();
+  renderProduction();
+  renderReporteFinal();
+  renderAllViews();
 });
+
+function renderAllViews() {
+  if (currentTab === 'week') renderWeekView();
+  if (currentTab === 'report') {
+    renderReport();
+    renderReporteFinal();
+  }
+  if (currentTab === 'production') renderProduction();
+}
 
 // ============================
 // THINGSPEAK INTEGRATION

@@ -214,41 +214,77 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 .completed .product-progress-fill { background: #606c38; }
 .completed .product-progress-pct { color: #606c38; }
 
-/* ---- WEEK VIEW ---- */
-.week-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+/* ---- CALENDARIO SEMANA ---- */
+.cal-header {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  padding: 8px 16px 4px;
   flex-shrink: 0;
 }
 
-#day-selector {
-  flex: 1;
-  padding: 8px;
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 4px 16px 8px;
+  flex-shrink: 0;
+}
+
+.cal-day {
   background: #fff;
-  color: #283618;
-  cursor: pointer;
-  text-align: center;
-}
-
-.nav-arrow {
-  width: 36px;
-  height: 36px;
-  border: none;
   border-radius: 10px;
-  background: #e9ecef;
-  color: #283618;
-  font-size: 1rem;
-  font-weight: 700;
+  padding: 6px 2px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   cursor: pointer;
+  transition: transform 0.1s;
+  border: 2px solid transparent;
 }
 
-.nav-arrow:active { background: #ced4da; }
+.cal-day:active { transform: scale(0.95); }
+
+.cal-day.today { border-color: #bc6c25; }
+.cal-day.selected { background: #bc6c25; color: #fff; }
+.cal-day.selected .cal-day-name,
+.cal-day.selected .cal-day-total { color: #fff; }
+
+.cal-day-name {
+  font-size: 0.6rem;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cal-day-total {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #283618;
+  margin-top: 2px;
+}
+
+.cal-day-status {
+  font-size: 0.55rem;
+  color: #999;
+  margin-top: 1px;
+}
+
+.cal-detail {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cal-detail-header {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #283618;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.cal-detail-body { }
 
 /* ---- SUMMARY ---- */
 /* ---- REPORT ---- */
@@ -790,8 +826,16 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .modal-remaining { color: #dda15e !important; }
   .modal-set-row label { color: #999; }
   .modal-set-input-group input { background: #0f3460; color: #e0e0e0; border-color: #533483; }
-  .week-nav select { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
   .report-title { color: #e0e0e0; }
+  .cal-day { background: #16213e; }
+  .cal-day.today { border-color: #dda15e; }
+  .cal-day.selected { background: #dda15e; }
+  .cal-day.selected .cal-day-name,
+  .cal-day.selected .cal-day-total { color: #1a1a2e; }
+  .cal-day-name { color: #888; }
+  .cal-day-total { color: #e0e0e0; }
+  .cal-day-status { color: #666; }
+  .cal-detail-header { color: #e0e0e0; }
   .report-stat { background: #16213e; }
   .report-stat-value { color: #e0e0e0; }
   .report-row { border-color: #2a2a4a; }
@@ -819,7 +863,5 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .tanda-total-row strong, .tanda-neto-row strong { color: #e0e0e0; }
   .tanda-neto-row strong { color: #a3b18a; }
   .tanda-mermas-row input { background: #16213e; border-color: #2a2a4a; color: #dda15e; }
-  .nav-arrow { background: #2a2a4a; color: #e0e0e0; }
-  .nav-arrow:active { background: #3a3a5a; }
   .modal-backdrop { background: rgba(0,0,0,0.6); }
 }
