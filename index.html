@@ -17,6 +17,7 @@
       <div class="header-right">
         <span id="current-date"></span>
         <button id="btn-manage" class="gear-btn">⚙️</button>
+        <button id="btn-print" class="gear-btn">🖨️</button>
       </div>
     </header>
 
@@ -212,6 +213,20 @@
             <button class="modal-btn" onclick="modalAdd(10)">+10</button>
             <button class="modal-btn modal-btn-minus" onclick="modalAdd(-1)">-1</button>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- ====== MODAL IMPRIMIR ====== -->
+    <div id="print-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content" style="max-width:320px;margin:auto;border-radius:20px">
+        <div class="modal-header">
+          <h3>Imprimir reporte</h3>
+          <button id="print-modal-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+          <button class="print-option-btn" onclick="printReport('elaboracion')">📋 Reporte Elaboración</button>
+          <button class="print-option-btn" onclick="printReport('final')">📊 Reporte Final</button>
         </div>
       </div>
     </div>

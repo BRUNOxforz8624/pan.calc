@@ -758,6 +758,83 @@ function renderAllViews() {
 }
 
 // ============================
+// IMPRIMIR
+// ============================
+function openPrintModal() {
+  document.getElementById('print-modal').classList.remove('hidden');
+}
+
+function closePrintModal() {
+  document.getElementById('print-modal').classList.add('hidden');
+}
+
+function printReport(type) {
+  closePrintModal();
+  const todayIdx = getDayIndex();
+  const todayProd = getTodayProd();
+  const todayBatch = getTodayBatch();
+  const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = new Date().toLocaleDateString('es-ES', dateOpts);
+
+  const isElab = type === 'elaboracion';
+  const title = isElab ? 'Reporte de Elaboración' : 'Reporte Final';
+
+  let rowsHtml = '';
+  let totalTarget = 0, total1 = 0, total2 = 0, total3 = 0;
+
+  PRODUCTS.forEach(p => {
+    const target = getTarget(p, todayIdx);
+    if (target === 0) return;
+    totalTarget += target;
+
+    if (isElab) {
+      const produced = todayProd[p.name] || 0;
+      total1 += produced;
+      const falta = Math.max(0, target - produced);
+      rowsHtml += `<tr><td>${p.name}</td><td class="num">${target.toFixed(1)}</td><td class="num">${produced.toFixed(0)}</td><td class="num">${falta.toFixed(1)}</td></tr>`;
+    } else {
+      const pb = todayBatch[p.name];
+      const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
+      const mermas = pb ? (pb.mermas || 0) : 0;
+      const neto = Math.max(0, tandas - mermas);
+      total1 += tandas; total2 += mermas; total3 += neto;
+      rowsHtml += `<tr><td>${p.name}</td><td class="num">${target.toFixed(1)}</td><td class="num">${tandas.toFixed(0)}</td><td class="num">${mermas.toFixed(0)}</td><td class="num">${neto.toFixed(0)}</td></tr>`;
+    }
+  });
+
+  const w = window.open('', '_blank');
+  const cols = isElab
+    ? `<th>Producto</th><th>Meta</th><th>Producido</th><th>Faltan</th>`
+    : `<th>Producto</th><th>Meta</th><th>Tandas</th><th>Mermas</th><th>Neto</th>`;
+  const totalRow = isElab
+    ? `<tr class="total"><td>TOTAL</td><td class="num">${totalTarget.toFixed(1)}</td><td class="num">${total1.toFixed(0)}</td><td class="num">${Math.max(0,totalTarget-total1).toFixed(1)}</td></tr>`
+    : `<tr class="total"><td>TOTAL</td><td class="num">${totalTarget.toFixed(1)}</td><td class="num">${total1.toFixed(0)}</td><td class="num">${total2.toFixed(0)}</td><td class="num">${total3.toFixed(0)}</td></tr>`;
+
+  w.document.write(`
+    <!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title} - PanCalc</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #222; }
+      h1 { font-size: 1.3rem; color: #bc6c25; margin-bottom: 2px; }
+      .sub { color: #666; font-size: 0.85rem; margin-bottom: 20px; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+      th { background: #283618; color: #fff; padding: 8px 6px; text-align: left; }
+      th:first-child { border-radius: 6px 0 0 0; }
+      th:last-child { border-radius: 0 6px 0 0; }
+      td { padding: 5px 6px; border-bottom: 1px solid #e0e0e0; }
+      .num { text-align: right; font-weight: 600; }
+      .total td { font-weight: 800; background: #fefae0; border-top: 2px solid #283618; padding-top: 8px; }
+      @media print { body { padding: 15px; } }
+    </style></head><body>
+    <h1>${title}</h1>
+    <div class="sub">${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}</div>
+    <table><thead><tr>${cols}</tr></thead><tbody>${rowsHtml}${totalRow}</tbody></table>
+    <script>window.print();window.close();<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+// ============================
 // THINGSPEAK INTEGRATION
 // ============================
 // Cambia estos valores por los de tu canal:
@@ -861,6 +938,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('manage-close').addEventListener('click', closeManageModal);
   document.getElementById('manage-add-btn').addEventListener('click', addProduct);
 
+  // Imprimir
+  document.getElementById('btn-print').addEventListener('click', openPrintModal);
+  document.getElementById('print-modal-close').addEventListener('click', closePrintModal);
+
   // Modal Día
   document.getElementById('day-modal-close').addEventListener('click', closeDayModal);
 
@@ -871,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); }
+    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); closePrintModal(); }
   });
 
   renderAll();

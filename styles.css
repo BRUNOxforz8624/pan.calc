@@ -697,6 +697,14 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 }
 .manage-save-btn:active { background: #4a5530; }
 
+/* ---- IMPRIMIR ---- */
+.print-option-btn {
+  width: 100%; padding: 16px; border: none; border-radius: 12px;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  background: #f8f9fa; color: #283618; text-align: center;
+}
+.print-option-btn:active { background: #e9ecef; }
+
 /* ---- MODAL ---- */
 .modal {
   position: fixed;
@@ -958,6 +966,8 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .manage-delete-btn:active { background: #3a3a5a; }
   .manage-name-input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
   .manage-day-grid input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
+  .print-option-btn { background: #0f3460; color: #e0e0e0; }
+  .print-option-btn:active { background: #16213e; }
   .cal-detail-body > div:first-child > div { background: #16213e !important; }
   .cal-detail-body > div:first-child > div strong { color: #e0e0e0 !important; }
   .cal-detail-body > div:first-child > div strong[style*="color:#9c6644"] { color: #dda15e !important; }
