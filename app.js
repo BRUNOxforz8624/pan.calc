@@ -52,6 +52,7 @@ const db = firebase.database();
 const prodRef = db.ref('production');
 const batchRef = db.ref('batch');
 const productsRef = db.ref('products');
+const ordersRef = db.ref('orders');
 
 // ============================
 // ESTADO
@@ -80,6 +81,19 @@ function getTodayProd() {
 
 function getTarget(p, dayIdx) {
   return p[DAY_KEYS[dayIdx]] || 0;
+}
+
+function getTargetWithOrders(p, dayIdx, dateKey) {
+  let t = getTarget(p, dayIdx);
+  const orders = orderData[dateKey] || {};
+  Object.values(orders).forEach(o => {
+    if (o.productName === p.name) t += o.quantity;
+  });
+  return t;
+}
+
+function getOrdersForDate(dateKey) {
+  return orderData[dateKey] || {};
 }
 
 function getWeeklyTarget(p) {
@@ -155,11 +169,12 @@ function renderTodayView() {
   todayEl.textContent = DAYS[todayIdx];
 
   const todayProd = getTodayProd();
+  const todayKey = getTodayKey();
   let totalTarget = 0, totalProduced = 0;
 
   let html = '';
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, todayIdx);
+    const target = getTargetWithOrders(p, todayIdx, todayKey);
     if (target === 0) return;
     totalTarget += target;
     const produced = todayProd[p.name] || 0;
@@ -219,6 +234,8 @@ function renderCalDetail() {
   const dateStr = dt.toLocaleDateString('es-ES', opts);
   header.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
   body.innerHTML = buildDayDetailHTML(selectedDateKey);
+  renderOrders(selectedDateKey);
+  document.getElementById('cal-add-order-btn').onclick = () => openAddOrderModal(selectedDateKey);
 }
 
 function selectCalDay(dateKey) {
@@ -255,7 +272,7 @@ function buildDayDetailHTML(dateKey) {
   const rows = [];
 
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, dayIdx);
+    const target = getTargetWithOrders(p, dayIdx, dateKey);
     if (target === 0) return;
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
@@ -429,6 +446,7 @@ function renderReport() {
   const container = document.getElementById('report-product-list');
   const todayIdx = getDayIndex();
   const todayProd = getTodayProd();
+  const todayKey = getTodayKey();
 
   // Date
   const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -439,7 +457,7 @@ function renderReport() {
 
   const rows = [];
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, todayIdx);
+    const target = getTargetWithOrders(p, todayIdx, todayKey);
     if (target === 0) return;
     totalTarget += target;
     const produced = todayProd[p.name] || 0;
@@ -556,6 +574,7 @@ function switchTab(tab) {
 // PRODUCCIÓN (TANDAS)
 // ============================
 let batchData = {};
+let orderData = {};
 
 function getTodayBatch() {
   const key = getTodayKey();
@@ -648,6 +667,68 @@ function resetAllData() {
   localStorage.removeItem('pancalc_batch');
 }
 
+// ============================
+// PEDIDOS
+// ============================
+let editingOrderDate = '';
+
+function openAddOrderModal(dateKey) {
+  editingOrderDate = dateKey;
+  document.getElementById('order-date').value = dateKey;
+  document.getElementById('order-qty').value = '';
+  document.getElementById('order-time').value = '';
+
+  const select = document.getElementById('order-product');
+  select.innerHTML = PRODUCTS.map(p => `<option value="${p.name.replace(/"/g,'&quot;')}">${p.name}</option>`).join('');
+  document.getElementById('order-modal').classList.remove('hidden');
+}
+
+function saveOrder() {
+  const dateKey = document.getElementById('order-date').value;
+  const productName = document.getElementById('order-product').value;
+  const qty = parseFloat(document.getElementById('order-qty').value) || 0;
+  const time = document.getElementById('order-time').value;
+  if (!productName || qty <= 0) return alert('Selecciona producto y cantidad válida');
+
+  const orderId = Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+  const order = { productName, quantity: qty, deliveryTime: time, createdAt: Date.now() };
+
+  ordersRef.child(dateKey).child(orderId).set(order);
+  closeOrderModal();
+}
+
+function deleteOrder(dateKey, orderId) {
+  if (!confirm('¿Eliminar este pedido?')) return;
+  ordersRef.child(dateKey).child(orderId).remove();
+}
+
+function closeOrderModal() {
+  document.getElementById('order-modal').classList.add('hidden');
+}
+
+function renderOrders(dateKey) {
+  const list = document.getElementById('cal-orders-list');
+  const orders = getOrdersForDate(dateKey);
+  const keys = Object.keys(orders);
+  if (!keys.length) {
+    list.innerHTML = '<div class="cal-orders-empty">Sin pedidos para este día</div>';
+    return;
+  }
+  let html = '';
+  keys.forEach(id => {
+    const o = orders[id];
+    html += `
+      <div class="cal-order-item">
+        <div class="cal-order-info">
+          <span class="cal-order-product">${o.productName}</span>
+          <span class="cal-order-meta">${o.quantity} ud — ${o.deliveryTime || 'Sin hora'}</span>
+        </div>
+        <button class="cal-order-delete" onclick="deleteOrder('${dateKey}','${id}')">✕</button>
+      </div>`;
+  });
+  list.innerHTML = html;
+}
+
 function renderProduction() {
   const container = document.getElementById('prod-product-list');
   const dateEl = document.getElementById('prod-date');
@@ -657,10 +738,11 @@ function renderProduction() {
 
   const todayIdx = getDayIndex();
   const todayBatch = getTodayBatch();
+  const todayKey = getTodayKey();
 
   let html = '';
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, todayIdx);
+    const target = getTargetWithOrders(p, todayIdx, todayKey);
     if (target === 0) return;
 
     const pb = todayBatch[p.name];
@@ -698,12 +780,13 @@ function renderReporteFinal() {
   const list = document.getElementById('report-final-list');
   const todayIdx = getDayIndex();
   const dayBatch = getTodayBatch();
+  const todayKey = getTodayKey();
 
   let totalTandas = 0, totalMermas = 0, totalNeto = 0;
 
   const rows = [];
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, todayIdx);
+    const target = getTargetWithOrders(p, todayIdx, todayKey);
     if (target === 0) return;
 
     const pb = dayBatch[p.name];
@@ -748,6 +831,13 @@ batchRef.on('value', snap => {
   renderAllViews();
 });
 
+// Escuchar cambios en pedidos
+ordersRef.on('value', snap => {
+  orderData = snap.val() || {};
+  if (currentTab === 'week') renderCalView();
+  renderAllViews();
+});
+
 function renderAllViews() {
   if (currentTab === 'week') renderCalView();
   if (currentTab === 'report') {
@@ -773,6 +863,7 @@ function printReport(type) {
   const todayIdx = getDayIndex();
   const todayProd = getTodayProd();
   const todayBatch = getTodayBatch();
+  const todayKey = getTodayKey();
   const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   const dateStr = new Date().toLocaleDateString('es-ES', dateOpts);
 
@@ -783,7 +874,7 @@ function printReport(type) {
   let totalTarget = 0, total1 = 0, total2 = 0, total3 = 0;
 
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, todayIdx);
+    const target = getTargetWithOrders(p, todayIdx, todayKey);
     if (target === 0) return;
     totalTarget += target;
 
@@ -810,6 +901,19 @@ function printReport(type) {
     ? `<tr class="total"><td>TOTAL</td><td class="num">${totalTarget.toFixed(1)}</td><td class="num">${total1.toFixed(0)}</td><td class="num">${Math.max(0,totalTarget-total1).toFixed(1)}</td></tr>`
     : `<tr class="total"><td>TOTAL</td><td class="num">${totalTarget.toFixed(1)}</td><td class="num">${total1.toFixed(0)}</td><td class="num">${total2.toFixed(0)}</td><td class="num">${total3.toFixed(0)}</td></tr>`;
 
+  // Orders section
+  const orders = getOrdersForDate(todayKey);
+  const orderKeys = Object.keys(orders);
+  let ordersHtml = '';
+  if (orderKeys.length) {
+    ordersHtml = '<h2 style="font-size:1rem;margin:20px 0 8px;color:#9c6644">📦 Pedidos del día</h2><table><thead><tr><th>Producto</th><th>Cantidad</th><th>Entrega</th></tr></thead><tbody>';
+    orderKeys.forEach(id => {
+      const o = orders[id];
+      ordersHtml += `<tr><td>${o.productName}</td><td class="num">${o.quantity}</td><td class="num">${o.deliveryTime || '—'}</td></tr>`;
+    });
+    ordersHtml += '</tbody></table>';
+  }
+
   w.document.write(`
     <!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title} - PanCalc</title>
     <style>
@@ -829,6 +933,7 @@ function printReport(type) {
     <h1>${title}</h1>
     <div class="sub">${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}</div>
     <table><thead><tr>${cols}</tr></thead><tbody>${rowsHtml}${totalRow}</tbody></table>
+    ${ordersHtml}
     <script>window.print();window.close();<\/script>
     </body></html>`);
   w.document.close();
@@ -846,12 +951,13 @@ function sendToThingSpeak() {
   const todayIdx = getDayIndex();
   const todayProd = getTodayProd();
   const todayBatch = getTodayBatch();
+  const todayKey = getTodayKey();
 
   let totalTarget = 0, totalProduced = 0;
   let totalTandas = 0, totalMermas = 0, totalNeto = 0;
 
   PRODUCTS.forEach(p => {
-    const target = getTarget(p, todayIdx);
+    const target = getTargetWithOrders(p, todayIdx, todayKey);
     if (target === 0) return;
     totalTarget += target;
     totalProduced += todayProd[p.name] || 0;
@@ -942,6 +1048,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-print').addEventListener('click', openPrintModal);
   document.getElementById('print-modal-close').addEventListener('click', closePrintModal);
 
+  // Pedidos
+  document.getElementById('order-modal-close').addEventListener('click', closeOrderModal);
+  document.getElementById('order-save-btn').addEventListener('click', saveOrder);
+
   // Modal Día
   document.getElementById('day-modal-close').addEventListener('click', closeDayModal);
 
@@ -952,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); closePrintModal(); }
+    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); closePrintModal(); closeOrderModal(); }
   });
 
   renderAll();
