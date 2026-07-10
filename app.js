@@ -934,7 +934,7 @@ function printReport(type) {
     <div class="sub">${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}</div>
     <table><thead><tr>${cols}</tr></thead><tbody>${rowsHtml}${totalRow}</tbody></table>
     ${ordersHtml}
-    <script>window.print();window.close();<\/script>
+    <p style="text-align:center;color:#999;margin-top:30px;font-size:0.75rem">PanCalc — usa Imprimir o RawBT para generar el PDF</p>
     </body></html>`);
   w.document.close();
 }
