@@ -26,6 +26,7 @@
       <button class="tab" data-tab="week">Calendario</button>
       <button class="tab" data-tab="report">Reporte</button>
       <button class="tab" data-tab="production">Producción</button>
+      <button class="tab" data-tab="rawmaterials">Materia Prima</button>
     </div>
 
     <!-- ====== TAB HOY ====== -->
@@ -128,6 +129,15 @@
       <div id="prod-product-list" class="product-list"></div>
     </div>
 
+    <!-- ====== TAB MATERIA PRIMA ====== -->
+    <div id="view-rawmaterials" class="view">
+      <div class="prod-header">
+        <span class="prod-title">Materia Prima</span>
+        <span class="prod-header-date" id="rawmaterials-date"></span>
+      </div>
+      <div id="rawmaterials-list" class="product-list"></div>
+    </div>
+
     <!-- ====== MODAL GESTIÓN PRODUCTOS ====== -->
     <div id="manage-modal" class="modal hidden">
       <div class="modal-backdrop"></div>
@@ -174,6 +184,18 @@
               <span>Mermas (quemados/dañados):</span>
               <input type="number" id="tanda-mermas-input" min="0" value="0" inputmode="numeric">
             </div>
+            <div class="tanda-mermas-row">
+              <span>Reciclaje:</span>
+              <input type="number" id="tanda-reciclaje-input" min="0" value="0" inputmode="numeric">
+            </div>
+            <div class="tanda-mermas-row">
+              <span>Transformación:</span>
+              <input type="number" id="tanda-transformacion-input" min="0" value="0" inputmode="numeric">
+            </div>
+            <div class="tanda-mermas-row">
+              <span>Pérdida:</span>
+              <input type="number" id="tanda-perdida-input" min="0" value="0" inputmode="numeric">
+            </div>
             <div class="tanda-neto-row">
               <span>Neto:</span>
               <strong id="tanda-neto">0</strong>
@@ -217,6 +239,36 @@
             <button class="modal-btn" onclick="modalAdd(5)">+5</button>
             <button class="modal-btn" onclick="modalAdd(10)">+10</button>
             <button class="modal-btn modal-btn-minus" onclick="modalAdd(-1)">-1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== MODAL INGREDIENTE ====== -->
+    <div id="ingredient-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="ingredient-modal-name"></h3>
+          <button id="ingredient-modal-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-counter">
+            <span class="modal-count" id="ingredient-modal-count">0</span>
+            <span class="modal-count-label">consumido</span>
+          </div>
+          <div class="modal-set-row">
+            <label>Cantidad consumida:</label>
+            <div class="modal-set-input-group">
+              <input type="number" id="ingredient-set-input" min="0" step="0.1" inputmode="decimal">
+              <button onclick="ingredientSetValue()">Fijar</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="modal-btn" onclick="ingredientAdd(1)">+1</button>
+            <button class="modal-btn" onclick="ingredientAdd(5)">+5</button>
+            <button class="modal-btn" onclick="ingredientAdd(10)">+10</button>
+            <button class="modal-btn modal-btn-minus" onclick="ingredientAdd(-1)">-1</button>
           </div>
         </div>
       </div>

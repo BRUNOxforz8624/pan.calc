@@ -48,10 +48,10 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .tab {
   flex: 1;
-  padding: 10px;
+  padding: 10px 2px;
   border: none;
   background: transparent;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #999;
   cursor: pointer;
@@ -760,6 +760,45 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 }
 .manage-save-btn:active { background: #4a5530; }
 
+/* ---- MATERIA PRIMA ---- */
+.raw-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.raw-card:active { transform: scale(0.99); }
+
+.raw-card-left { flex: 1; min-width: 0; }
+
+.raw-card-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #283618;
+  margin-bottom: 4px;
+}
+
+.raw-card-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.raw-card-stat {
+  color: #666;
+}
+
+.raw-card-stat strong {
+  color: #bc6c25;
+}
+
 /* ---- IMPRIMIR ---- */
 .print-option-btn {
   width: 100%; padding: 16px; border: none; border-radius: 12px;
@@ -1038,6 +1077,10 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .manage-delete-btn:active { background: #3a3a5a; }
   .manage-name-input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
   .manage-day-grid input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
+  .raw-card { background: #16213e; }
+  .raw-card-name { color: #e0e0e0; }
+  .raw-card-stat { color: #888; }
+  .raw-card-stat strong { color: #dda15e; }
   .print-option-btn { background: #0f3460; color: #e0e0e0; }
   .print-option-btn:active { background: #16213e; }
   .cal-detail-body > div:first-child > div { background: #16213e !important; }

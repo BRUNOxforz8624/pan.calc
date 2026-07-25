@@ -37,6 +37,25 @@ const DEFAULT_PRODUCTS = [
 
 let PRODUCTS = [...DEFAULT_PRODUCTS];
 
+const DEFAULT_INGREDIENTES = [
+  { name: "HARINA DE TRIGO" },
+  { name: "HARINA INTEGRAL" },
+  { name: "AFRECHO" },
+  { name: "HUEVO" },
+  { name: "LECHE" },
+  { name: "AZÚCAR" },
+  { name: "SAL" },
+  { name: "LEVADURA" },
+  { name: "ESENCIA DE MANTEQUILLA" },
+  { name: "ESENCIA DE VAINILLA" },
+  { name: "QUESO MOZARELLA" },
+  { name: "JAMÓN" },
+  { name: "CHARCUTERÍA" },
+  { name: "QUESO CREMA" },
+];
+
+let INGREDIENTS = [...DEFAULT_INGREDIENTES];
+
 // ============================
 // FIREBASE
 // ============================
@@ -53,6 +72,8 @@ const prodRef = db.ref('production');
 const batchRef = db.ref('batch');
 const productsRef = db.ref('products');
 const ordersRef = db.ref('orders');
+const ingredientsRef = db.ref('ingredients');
+const rawmaterialsRef = db.ref('rawmaterials');
 
 // ============================
 // ESTADO
@@ -148,6 +169,7 @@ function renderAll() {
   renderReport();
   renderReporteFinal();
   renderProduction();
+  renderRawMaterials();
 }
 
 function switchReportSubtab(subtab) {
@@ -276,7 +298,7 @@ function buildDayDetailHTML(dateKey) {
     if (target === 0) return;
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) : 0;
+    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     const neto = Math.max(0, tandas - mermas);
     totalTandas += tandas;
     totalMermas += mermas;
@@ -568,6 +590,7 @@ function switchTab(tab) {
   if (tab === 'week') { selectedDateKey = getTodayKey(); renderCalView(); }
   if (tab === 'report') renderReport();
   if (tab === 'production') renderProduction();
+  if (tab === 'rawmaterials') renderRawMaterials();
 }
 
 // ============================
@@ -575,6 +598,7 @@ function switchTab(tab) {
 // ============================
 let batchData = {};
 let orderData = {};
+let rawmaterialsData = {};
 
 function getTodayBatch() {
   const key = getTodayKey();
@@ -585,7 +609,7 @@ function getTodayBatch() {
 function getProductBatch(productName) {
   const day = getTodayBatch();
   if (!day[productName]) {
-    day[productName] = { tandas: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}], mermas: 0 };
+    day[productName] = { tandas: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}], mermas: 0, reciclaje: 0, transformacion: 0, perdida: 0 };
   }
   return day[productName];
 }
@@ -616,6 +640,9 @@ function openTandaModal(productName) {
   list.innerHTML = html;
 
   document.getElementById('tanda-mermas-input').value = pb.mermas || 0;
+  document.getElementById('tanda-reciclaje-input').value = pb.reciclaje || 0;
+  document.getElementById('tanda-transformacion-input').value = pb.transformacion || 0;
+  document.getElementById('tanda-perdida-input').value = pb.perdida || 0;
   updateTandaSummary();
   document.getElementById('tanda-modal').classList.remove('hidden');
 
@@ -635,7 +662,11 @@ function updateTandaSummary() {
   document.getElementById('tanda-total').textContent = total.toFixed(0);
 
   const mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
-  document.getElementById('tanda-neto').textContent = Math.max(0, total - mermas).toFixed(0);
+  const reciclaje = parseFloat(document.getElementById('tanda-reciclaje-input').value) || 0;
+  const transformacion = parseFloat(document.getElementById('tanda-transformacion-input').value) || 0;
+  const perdida = parseFloat(document.getElementById('tanda-perdida-input').value) || 0;
+  const totalMermas = mermas + reciclaje + transformacion + perdida;
+  document.getElementById('tanda-neto').textContent = Math.max(0, total - totalMermas).toFixed(0);
 }
 
 function saveTandas() {
@@ -648,6 +679,9 @@ function saveTandas() {
     }
   }
   pb.mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
+  pb.reciclaje = parseFloat(document.getElementById('tanda-reciclaje-input').value) || 0;
+  pb.transformacion = parseFloat(document.getElementById('tanda-transformacion-input').value) || 0;
+  pb.perdida = parseFloat(document.getElementById('tanda-perdida-input').value) || 0;
   batchRef.child(getTodayKey()).child(editingProduct).set(pb);
   closeTandaModal();
   renderProduction();
@@ -747,7 +781,7 @@ function renderProduction() {
 
     const pb = todayBatch[p.name];
     const total = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) : 0;
+    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     const neto = Math.max(0, total - mermas);
     const pct = target > 0 ? Math.min(100, (neto / target) * 100) : 0;
     const isDone = neto >= target;
@@ -776,6 +810,95 @@ function renderProduction() {
   container.innerHTML = html || '<div class="prod-empty">Toca un producto para registrar tandas</div>';
 }
 
+// ============================
+// MATERIA PRIMA
+// ============================
+function loadIngredients() {
+  ingredientsRef.once('value', snap => {
+    const data = snap.val();
+    if (data && data.length) {
+      INGREDIENTS = data;
+    } else {
+      ingredientsRef.set(DEFAULT_INGREDIENTES);
+      INGREDIENTS = [...DEFAULT_INGREDIENTES];
+    }
+  });
+}
+
+function renderRawMaterials() {
+  const container = document.getElementById('rawmaterials-list');
+  const dateEl = document.getElementById('rawmaterials-date');
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = new Date().toLocaleDateString('es-ES', opts);
+  dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+  const todayKey = getTodayKey();
+  const dayData = rawmaterialsData[todayKey] || {};
+
+  let html = '';
+  INGREDIENTS.forEach(ing => {
+    const consumed = dayData[ing.name] || 0;
+    html += `
+      <div class="raw-card" onclick="openIngredientModal('${ing.name.replace(/'/g, "\\'")}')">
+        <div class="raw-card-left">
+          <div class="raw-card-name">${ing.name}</div>
+          <div class="raw-card-stats">
+            <span class="raw-card-stat">Consumido: <strong>${consumed}</strong></span>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html || '<div class="prod-empty">Sin ingredientes registrados</div>';
+}
+
+let ingredientModalName = '';
+
+function openIngredientModal(name) {
+  ingredientModalName = name;
+  document.getElementById('ingredient-modal-name').textContent = name;
+
+  const todayKey = getTodayKey();
+  const dayData = rawmaterialsData[todayKey] || {};
+  const count = dayData[name] || 0;
+  document.getElementById('ingredient-modal-count').textContent = count;
+  document.getElementById('ingredient-set-input').value = '';
+  document.getElementById('ingredient-set-input').focus();
+
+  document.getElementById('ingredient-modal').classList.remove('hidden');
+}
+
+function ingredientAdd(amount) {
+  const todayKey = getTodayKey();
+  if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
+  const current = rawmaterialsData[todayKey][ingredientModalName] || 0;
+  const newVal = Math.max(0, current + amount);
+  rawmaterialsData[todayKey][ingredientModalName] = newVal;
+
+  rawmaterialsRef.child(todayKey).child(ingredientModalName).set(newVal);
+  document.getElementById('ingredient-modal-count').textContent = newVal;
+
+  try { navigator.vibrate(10); } catch(e) {}
+}
+
+function ingredientSetValue() {
+  const input = document.getElementById('ingredient-set-input');
+  let value = parseFloat(input.value);
+  if (isNaN(value) || value < 0) value = 0;
+
+  const todayKey = getTodayKey();
+  if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
+  rawmaterialsData[todayKey][ingredientModalName] = value;
+
+  rawmaterialsRef.child(todayKey).child(ingredientModalName).set(value);
+  document.getElementById('ingredient-modal-count').textContent = value;
+  input.value = '';
+}
+
+function closeIngredientModal() {
+  document.getElementById('ingredient-modal').classList.add('hidden');
+}
+
 function renderReporteFinal() {
   const list = document.getElementById('report-final-list');
   const todayIdx = getDayIndex();
@@ -791,7 +914,7 @@ function renderReporteFinal() {
 
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) : 0;
+    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     const neto = Math.max(0, tandas - mermas);
 
     totalTandas += tandas;
@@ -838,6 +961,13 @@ ordersRef.on('value', snap => {
   renderAllViews();
 });
 
+// Escuchar cambios en materia prima
+rawmaterialsRef.on('value', snap => {
+  rawmaterialsData = snap.val() || {};
+  if (currentTab === 'rawmaterials') renderRawMaterials();
+  renderAllViews();
+});
+
 function renderAllViews() {
   if (currentTab === 'week') renderCalView();
   if (currentTab === 'report') {
@@ -845,6 +975,7 @@ function renderAllViews() {
     renderReporteFinal();
   }
   if (currentTab === 'production') renderProduction();
+  if (currentTab === 'rawmaterials') renderRawMaterials();
 }
 
 // ============================
@@ -886,7 +1017,7 @@ function printReport(type) {
     } else {
       const pb = todayBatch[p.name];
       const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-      const mermas = pb ? (pb.mermas || 0) : 0;
+      const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
       const neto = Math.max(0, tandas - mermas);
       total1 += tandas; total2 += mermas; total3 += neto;
       rowsHtml += `<tr><td>${p.name}</td><td class="num">${target.toFixed(1)}</td><td class="num">${tandas.toFixed(0)}</td><td class="num">${mermas.toFixed(0)}</td><td class="num">${neto.toFixed(0)}</td></tr>`;
@@ -964,7 +1095,7 @@ function sendToThingSpeak() {
 
     const pb = todayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) : 0;
+    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     totalTandas += tandas;
     totalMermas += mermas;
     totalNeto += Math.max(0, tandas - mermas);
@@ -999,6 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cargar productos desde Firebase
   loadProducts();
+  loadIngredients();
 
   // Si Firebase ya cargó datos, renderiza; sino espera el listener
   if (dbReady) renderAll();
@@ -1058,11 +1190,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal Tandas
   document.getElementById('tanda-modal-close').addEventListener('click', closeTandaModal);
   document.getElementById('tanda-mermas-input').addEventListener('input', updateTandaSummary);
+  document.getElementById('tanda-reciclaje-input').addEventListener('input', updateTandaSummary);
+  document.getElementById('tanda-transformacion-input').addEventListener('input', updateTandaSummary);
+  document.getElementById('tanda-perdida-input').addEventListener('input', updateTandaSummary);
   document.getElementById('tanda-list').addEventListener('input', updateTandaSummary);
+
+  // Modal Ingrediente
+  document.getElementById('ingredient-modal-close').addEventListener('click', closeIngredientModal);
+  document.getElementById('ingredient-set-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') ingredientSetValue();
+  });
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); closePrintModal(); closeOrderModal(); }
+    if (e.key === 'Escape') { closeModal(); closeTandaModal(); closeDayModal(); closeManageModal(); closePrintModal(); closeOrderModal(); closeIngredientModal(); }
   });
 
   renderAll();
