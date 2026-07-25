@@ -298,12 +298,15 @@ function buildDayDetailHTML(dateKey) {
     if (target === 0) return;
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+    const reciclaje = pb ? (pb.reciclaje || 0) : 0;
+    const transformacion = pb ? (pb.transformacion || 0) : 0;
+    const perdida = pb ? (pb.perdida || 0) : 0;
+    const mermas = reciclaje + transformacion + perdida;
     const neto = Math.max(0, tandas - mermas);
     totalTandas += tandas;
     totalMermas += mermas;
     totalNeto += neto;
-    rows.push({ name: p.name, target, tandas, mermas, neto });
+    rows.push({ name: p.name, target, tandas, reciclaje, transformacion, perdida, neto });
   });
 
   let html = rows.map(r => {
@@ -315,7 +318,7 @@ function buildDayDetailHTML(dateKey) {
         <span class="report-row-numbers">
           <span class="report-row-produced">${r.neto.toFixed(0)}</span>
           <span class="report-row-target"> / ${r.target.toFixed(1)}</span>
-          <span style="color:#999;font-size:0.7rem"> (m:${r.mermas.toFixed(0)})</span>
+          <span style="color:#999;font-size:0.7rem"> (r:${r.reciclaje} t:${r.transformacion} p:${r.perdida})</span>
         </span>
         <span class="report-row-missing">${isDone ? '✅' : remaining.toFixed(1)}</span>
       </div>`;
@@ -982,14 +985,17 @@ function renderReporteFinal() {
 
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+    const reciclaje = pb ? (pb.reciclaje || 0) : 0;
+    const transformacion = pb ? (pb.transformacion || 0) : 0;
+    const perdida = pb ? (pb.perdida || 0) : 0;
+    const mermas = reciclaje + transformacion + perdida;
     const neto = Math.max(0, tandas - mermas);
 
     totalTandas += tandas;
     totalMermas += mermas;
     totalNeto += neto;
 
-    rows.push({ name: p.name, target, tandas, mermas, neto });
+    rows.push({ name: p.name, target, tandas, reciclaje, transformacion, perdida, neto });
   });
 
   document.getElementById('final-total-tandas').textContent = totalTandas.toFixed(0);
@@ -1005,7 +1011,7 @@ function renderReporteFinal() {
         <span class="report-row-numbers">
           <span class="report-row-produced">${r.neto.toFixed(0)}</span>
           <span class="report-row-target"> / ${r.target.toFixed(1)}</span>
-          <span style="color:#999;font-size:0.7rem"> (m:${r.mermas.toFixed(0)})</span>
+          <span style="color:#999;font-size:0.7rem"> (r:${r.reciclaje} t:${r.transformacion} p:${r.perdida})</span>
         </span>
         <span class="report-row-missing">${isDone ? '✅' : Math.max(0, r.target - r.neto).toFixed(1)}</span>
       </div>`;
