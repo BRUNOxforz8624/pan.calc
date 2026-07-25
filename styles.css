@@ -708,6 +708,16 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   margin-bottom: 6px;
   overflow: hidden;
 }
+.manage-nav {
+  display: flex; gap: 8px; margin-bottom: 16px;
+}
+.manage-nav-btn {
+  flex: 1; padding: 10px 0; border: 2px solid #e9ecef; border-radius: 10px;
+  background: #fff; font-size: 0.85rem; font-weight: 700; color: #666;
+  cursor: pointer; transition: all 0.2s;
+}
+.manage-nav-btn.active { border-color: #bc6c25; color: #bc6c25; background: rgba(188,108,37,0.05); }
+.manage-nav-btn:active { background: rgba(188,108,37,0.1); }
 .manage-add-btn {
   width: 100%; padding: 12px; border: 2px dashed #bc6c25;
   border-radius: 12px; background: transparent;
@@ -1079,6 +1089,8 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .modal-backdrop { background: rgba(0,0,0,0.6); }
   .gear-btn:active { background: #2a2a4a; }
   .manage-item { background: #0f3460; }
+  .manage-nav-btn { border-color: #2a2a4a; color: #888; background: #16213e; }
+  .manage-nav-btn.active { border-color: #dda15e; color: #dda15e; background: rgba(221,161,94,0.08); }
   .manage-add-btn { border-color: #dda15e; color: #dda15e; }
   .manage-add-btn:active { background: rgba(221,161,94,0.1); }
   .manage-item-name { color: #e0e0e0; }

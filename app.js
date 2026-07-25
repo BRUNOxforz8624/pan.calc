@@ -385,6 +385,13 @@ function openManageModal() {
   document.getElementById('manage-modal').classList.remove('hidden');
 }
 
+function scrollManageTo(sectionId) {
+  const el = document.getElementById(sectionId);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.manage-nav-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
 function closeManageModal() {
   document.getElementById('manage-modal').classList.add('hidden');
 }

@@ -147,11 +147,19 @@
           <button id="manage-close" class="modal-close-btn">&times;</button>
         </div>
         <div class="modal-body" style="padding-bottom: 60px">
-          <button id="manage-add-btn" class="manage-add-btn">+ Añadir producto</button>
-          <div id="manage-list" class="manage-list"></div>
-          <div class="manage-divider">Materia Prima</div>
-          <button id="manage-add-ingredient-btn" class="manage-add-btn">+ Añadir insumo</button>
-          <div id="manage-ingredients-list" class="manage-list"></div>
+          <div class="manage-nav">
+            <button class="manage-nav-btn active" onclick="scrollManageTo('products-section')">Productos</button>
+            <button class="manage-nav-btn" onclick="scrollManageTo('ingredients-section')">Materia Prima</button>
+          </div>
+          <div id="products-section">
+            <button id="manage-add-btn" class="manage-add-btn">+ Añadir producto</button>
+            <div id="manage-list" class="manage-list"></div>
+          </div>
+          <div id="ingredients-section">
+            <div class="manage-divider">Materia Prima</div>
+            <button id="manage-add-ingredient-btn" class="manage-add-btn">+ Añadir insumo</button>
+            <div id="manage-ingredients-list" class="manage-list"></div>
+          </div>
         </div>
       </div>
     </div>
