@@ -381,6 +381,7 @@ function saveProducts() {
 
 function openManageModal() {
   renderManageModal();
+  renderIngredientList();
   document.getElementById('manage-modal').classList.remove('hidden');
 }
 
@@ -462,6 +463,69 @@ function resetDefaultProducts() {
   PRODUCTS = [...DEFAULT_PRODUCTS];
   saveProducts();
   renderManageModal();
+}
+
+// ============================
+// GESTIÓN DE INSUMOS
+// ============================
+function saveIngredients() {
+  ingredientsRef.set(INGREDIENTS);
+}
+
+function renderIngredientList() {
+  const list = document.getElementById('manage-ingredients-list');
+  let html = '';
+  INGREDIENTS.forEach((ing, i) => {
+    html += `
+      <div class="manage-item">
+        <div class="manage-item-header" onclick="toggleIngredientEdit(${i})">
+          <span class="manage-item-name">${ing.name}</span>
+          <button class="manage-delete-btn" onclick="event.stopPropagation(); deleteIngredient(${i})">✕</button>
+        </div>
+        <div class="manage-edit" id="manage-ingredient-edit-${i}">
+          <input class="manage-name-input" id="manage-ingredient-name-${i}" value="${ing.name}" placeholder="Nombre del insumo">
+          <button class="manage-save-btn" onclick="saveIngredientEdit(${i})">Guardar</button>
+        </div>
+      </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function toggleIngredientEdit(i) {
+  const el = document.getElementById(`manage-ingredient-edit-${i}`);
+  el.classList.toggle('open');
+}
+
+function saveIngredientEdit(i) {
+  const nameEl = document.getElementById(`manage-ingredient-name-${i}`);
+  const newName = nameEl.value.trim();
+  if (!newName) return alert('El nombre no puede estar vacío');
+  INGREDIENTS[i].name = newName;
+  saveIngredients();
+  renderIngredientList();
+  renderRawMaterials();
+}
+
+function addIngredient() {
+  INGREDIENTS.push({ name: "Nuevo insumo" });
+  saveIngredients();
+  renderIngredientList();
+  renderRawMaterials();
+  setTimeout(() => {
+    const last = INGREDIENTS.length - 1;
+    const editEl = document.getElementById(`manage-ingredient-edit-${last}`);
+    if (editEl) editEl.classList.add('open');
+    const nameInput = document.getElementById(`manage-ingredient-name-${last}`);
+    if (nameInput) nameInput.focus();
+  }, 100);
+}
+
+function deleteIngredient(i) {
+  if (!confirm(`¿Eliminar "${INGREDIENTS[i].name}"?`)) return;
+  INGREDIENTS.splice(i, 1);
+  saveIngredients();
+  renderIngredientList();
+  renderRawMaterials();
 }
 
 function renderReport() {
@@ -1175,6 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-manage').addEventListener('click', openManageModal);
   document.getElementById('manage-close').addEventListener('click', closeManageModal);
   document.getElementById('manage-add-btn').addEventListener('click', addProduct);
+  document.getElementById('manage-add-ingredient-btn').addEventListener('click', addIngredient);
 
   // Imprimir
   document.getElementById('btn-print').addEventListener('click', openPrintModal);

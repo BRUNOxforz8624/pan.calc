@@ -760,6 +760,15 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 }
 .manage-save-btn:active { background: #4a5530; }
 
+.manage-divider {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #bc6c25;
+  padding: 16px 0 8px;
+  border-top: 2px solid #e9ecef;
+  margin-top: 12px;
+}
+
 /* ---- MATERIA PRIMA ---- */
 .raw-card {
   display: flex;
@@ -1077,6 +1086,7 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .manage-delete-btn:active { background: #3a3a5a; }
   .manage-name-input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
   .manage-day-grid input { background: #16213e; border-color: #2a2a4a; color: #e0e0e0; }
+  .manage-divider { border-top-color: #2a2a4a; color: #dda15e; }
   .raw-card { background: #16213e; }
   .raw-card-name { color: #e0e0e0; }
   .raw-card-stat { color: #888; }
