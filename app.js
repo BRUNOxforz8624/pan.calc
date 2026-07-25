@@ -298,7 +298,7 @@ function buildDayDetailHTML(dateKey) {
     if (target === 0) return;
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+    const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     const neto = Math.max(0, tandas - mermas);
     totalTandas += tandas;
     totalMermas += mermas;
@@ -673,7 +673,7 @@ function getTodayBatch() {
 function getProductBatch(productName) {
   const day = getTodayBatch();
   if (!day[productName]) {
-    day[productName] = { tandas: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}], mermas: 0, reciclaje: 0, transformacion: 0, perdida: 0 };
+    day[productName] = { tandas: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}], reciclaje: 0, transformacion: 0, perdida: 0 };
   }
   return day[productName];
 }
@@ -703,7 +703,6 @@ function openTandaModal(productName) {
   });
   list.innerHTML = html;
 
-  document.getElementById('tanda-mermas-input').value = pb.mermas || 0;
   document.getElementById('tanda-reciclaje-input').value = pb.reciclaje || 0;
   document.getElementById('tanda-transformacion-input').value = pb.transformacion || 0;
   document.getElementById('tanda-perdida-input').value = pb.perdida || 0;
@@ -725,11 +724,10 @@ function updateTandaSummary() {
   }
   document.getElementById('tanda-total').textContent = total.toFixed(0);
 
-  const mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
   const reciclaje = parseFloat(document.getElementById('tanda-reciclaje-input').value) || 0;
   const transformacion = parseFloat(document.getElementById('tanda-transformacion-input').value) || 0;
   const perdida = parseFloat(document.getElementById('tanda-perdida-input').value) || 0;
-  const totalMermas = mermas + reciclaje + transformacion + perdida;
+  const totalMermas = reciclaje + transformacion + perdida;
   document.getElementById('tanda-neto').textContent = Math.max(0, total - totalMermas).toFixed(0);
 }
 
@@ -742,7 +740,6 @@ function saveTandas() {
       pb.tandas[i] = { time: timeEl.value, qty: parseFloat(qtyEl.value) || 0 };
     }
   }
-  pb.mermas = parseFloat(document.getElementById('tanda-mermas-input').value) || 0;
   pb.reciclaje = parseFloat(document.getElementById('tanda-reciclaje-input').value) || 0;
   pb.transformacion = parseFloat(document.getElementById('tanda-transformacion-input').value) || 0;
   pb.perdida = parseFloat(document.getElementById('tanda-perdida-input').value) || 0;
@@ -845,7 +842,7 @@ function renderProduction() {
 
     const pb = todayBatch[p.name];
     const total = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+    const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     const neto = Math.max(0, total - mermas);
     const pct = target > 0 ? Math.min(100, (neto / target) * 100) : 0;
     const isDone = neto >= target;
@@ -978,7 +975,7 @@ function renderReporteFinal() {
 
     const pb = dayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+    const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     const neto = Math.max(0, tandas - mermas);
 
     totalTandas += tandas;
@@ -1081,7 +1078,7 @@ function printReport(type) {
     } else {
       const pb = todayBatch[p.name];
       const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-      const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+      const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
       const neto = Math.max(0, tandas - mermas);
       total1 += tandas; total2 += mermas; total3 += neto;
       rowsHtml += `<tr><td>${p.name}</td><td class="num">${target.toFixed(1)}</td><td class="num">${tandas.toFixed(0)}</td><td class="num">${mermas.toFixed(0)}</td><td class="num">${neto.toFixed(0)}</td></tr>`;
@@ -1159,7 +1156,7 @@ function sendToThingSpeak() {
 
     const pb = todayBatch[p.name];
     const tandas = pb ? calcTandaTotal(pb.tandas) : 0;
-    const mermas = pb ? (pb.mermas || 0) + (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
+    const mermas = pb ? (pb.reciclaje || 0) + (pb.transformacion || 0) + (pb.perdida || 0) : 0;
     totalTandas += tandas;
     totalMermas += mermas;
     totalNeto += Math.max(0, tandas - mermas);
@@ -1254,7 +1251,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Modal Tandas
   document.getElementById('tanda-modal-close').addEventListener('click', closeTandaModal);
-  document.getElementById('tanda-mermas-input').addEventListener('input', updateTandaSummary);
   document.getElementById('tanda-reciclaje-input').addEventListener('input', updateTandaSummary);
   document.getElementById('tanda-transformacion-input').addEventListener('input', updateTandaSummary);
   document.getElementById('tanda-perdida-input').addEventListener('input', updateTandaSummary);
