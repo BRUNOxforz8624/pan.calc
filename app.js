@@ -896,6 +896,24 @@ function loadIngredients() {
   });
 }
 
+function getIngredientDayData(ingredientName) {
+  const todayKey = getTodayKey();
+  if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
+  const day = rawmaterialsData[todayKey];
+  if (!day[ingredientName]) {
+    day[ingredientName] = { total: 0, ingresos: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}] };
+  }
+  if (typeof day[ingredientName] === 'number') {
+    day[ingredientName] = { total: 0, ingresos: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}] };
+  }
+  return day[ingredientName];
+}
+
+function calcIngresosTotal(ingresos) {
+  if (!Array.isArray(ingresos)) return 0;
+  return ingresos.reduce((s, t) => s + (parseFloat(t.qty) || 0), 0);
+}
+
 function renderRawMaterials() {
   const container = document.getElementById('rawmaterials-list');
   const dateEl = document.getElementById('rawmaterials-date');
@@ -908,14 +926,29 @@ function renderRawMaterials() {
 
   let html = '';
   INGREDIENTS.forEach(ing => {
-    const consumed = dayData[ing.name] || 0;
+    const id = getIngredientDayData(ing.name);
+    const ingresados = calcIngresosTotal(id.ingresos);
+    const total = id.total || 0;
+    const restante = Math.max(0, total - ingresados);
+    const pct = total > 0 ? Math.min(100, (ingresados / total) * 100) : 0;
+    const isDone = ingresados >= total && total > 0;
+    const dashArray = pct.toFixed(0);
+
     html += `
-      <div class="raw-card" onclick="openIngredientModal('${ing.name.replace(/'/g, "\\'")}')">
-        <div class="raw-card-left">
-          <div class="raw-card-name">${ing.name}</div>
-          <div class="raw-card-stats">
-            <span class="raw-card-stat">Consumido: <strong>${consumed}</strong></span>
+      <div class="prod-card" onclick="openIngredientModal('${ing.name.replace(/'/g, "\\'")}')">
+        <div class="prod-card-left">
+          <div class="prod-card-name">${ing.name}</div>
+          <div class="prod-card-stats">
+            <span class="prod-card-stat">Ingresados: <strong>${ingresados.toFixed(0)}</strong></span>
+            <span class="prod-card-stat neto">Restante: <strong>${restante.toFixed(0)}</strong></span>
           </div>
+        </div>
+        <div class="prod-card-circle ${isDone ? 'done' : ''}">
+          <svg viewBox="0 0 36 36">
+            <path class="prod-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="prod-circle-fill" stroke-dasharray="${dashArray}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <text x="18" y="20.5" class="prod-circle-text">${Math.round(pct)}%</text>
+          </svg>
         </div>
       </div>`;
   });
@@ -929,41 +962,60 @@ function openIngredientModal(name) {
   ingredientModalName = name;
   document.getElementById('ingredient-modal-name').textContent = name;
 
-  const todayKey = getTodayKey();
-  const dayData = rawmaterialsData[todayKey] || {};
-  const count = dayData[name] || 0;
-  document.getElementById('ingredient-modal-count').textContent = count;
-  document.getElementById('ingredient-set-input').value = '';
-  document.getElementById('ingredient-set-input').focus();
+  const id = getIngredientDayData(name);
+  const list = document.getElementById('ingreso-list');
 
+  let html = '';
+  id.ingresos.forEach((t, i) => {
+    html += `
+      <div class="tanda-row">
+        <span class="tanda-row-label">Ingreso ${i + 1}</span>
+        <input type="time" id="ingreso-time-${i}" value="${t.time || ''}">
+        <input type="number" id="ingreso-qty-${i}" min="0" value="${t.qty || ''}" inputmode="numeric" placeholder="Cant">
+      </div>`;
+  });
+  list.innerHTML = html;
+
+  document.getElementById('ingreso-total-input').value = id.total || 0;
+  updateIngredientSummary();
   document.getElementById('ingredient-modal').classList.remove('hidden');
+
+  for (let i = 0; i < 5; i++) {
+    const qtyEl = document.getElementById(`ingreso-qty-${i}`);
+    if (qtyEl) qtyEl.addEventListener('input', updateIngredientSummary);
+  }
+
+  setTimeout(() => {
+    const firstTime = document.getElementById('ingreso-time-0');
+    if (firstTime) firstTime.focus();
+  }, 300);
 }
 
-function ingredientAdd(amount) {
-  const todayKey = getTodayKey();
-  if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
-  const current = rawmaterialsData[todayKey][ingredientModalName] || 0;
-  const newVal = Math.max(0, current + amount);
-  rawmaterialsData[todayKey][ingredientModalName] = newVal;
+function updateIngredientSummary() {
+  let total = 0;
+  for (let i = 0; i < 5; i++) {
+    const qtyEl = document.getElementById(`ingreso-qty-${i}`);
+    if (qtyEl) total += parseFloat(qtyEl.value) || 0;
+  }
+  document.getElementById('ingreso-sum').textContent = total.toFixed(0);
 
-  rawmaterialsRef.child(todayKey).child(ingredientModalName).set(newVal);
-  document.getElementById('ingredient-modal-count').textContent = newVal;
-
-  try { navigator.vibrate(10); } catch(e) {}
+  const diario = parseFloat(document.getElementById('ingreso-total-input').value) || 0;
+  document.getElementById('ingreso-restante').textContent = Math.max(0, diario - total).toFixed(0);
 }
 
-function ingredientSetValue() {
-  const input = document.getElementById('ingredient-set-input');
-  let value = parseFloat(input.value);
-  if (isNaN(value) || value < 0) value = 0;
-
-  const todayKey = getTodayKey();
-  if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
-  rawmaterialsData[todayKey][ingredientModalName] = value;
-
-  rawmaterialsRef.child(todayKey).child(ingredientModalName).set(value);
-  document.getElementById('ingredient-modal-count').textContent = value;
-  input.value = '';
+function saveIngredientIngresos() {
+  const id = getIngredientDayData(ingredientModalName);
+  for (let i = 0; i < 5; i++) {
+    const timeEl = document.getElementById(`ingreso-time-${i}`);
+    const qtyEl = document.getElementById(`ingreso-qty-${i}`);
+    if (timeEl && qtyEl) {
+      id.ingresos[i] = { time: timeEl.value, qty: parseFloat(qtyEl.value) || 0 };
+    }
+  }
+  id.total = parseFloat(document.getElementById('ingreso-total-input').value) || 0;
+  rawmaterialsRef.child(getTodayKey()).child(ingredientModalName).set(id);
+  document.getElementById('ingredient-modal').classList.add('hidden');
+  renderRawMaterials();
 }
 
 function closeIngredientModal() {
@@ -1271,9 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Modal Ingrediente
   document.getElementById('ingredient-modal-close').addEventListener('click', closeIngredientModal);
-  document.getElementById('ingredient-set-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') ingredientSetValue();
-  });
+  document.getElementById('ingreso-total-input').addEventListener('input', updateIngredientSummary);
 
   // Keyboard escape
   document.addEventListener('keydown', e => {
