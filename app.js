@@ -385,14 +385,15 @@ function saveProducts() {
 function openManageModal() {
   renderManageModal();
   renderIngredientList();
+  switchManageSection('products');
   document.getElementById('manage-modal').classList.remove('hidden');
 }
 
-function switchManageSection(section, btn) {
+function switchManageSection(section) {
   document.getElementById('products-section').style.display = section === 'products' ? '' : 'none';
   document.getElementById('ingredients-section').style.display = section === 'ingredients' ? '' : 'none';
-  document.querySelectorAll('.manage-nav-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  document.getElementById('nav-products').classList.toggle('active', section === 'products');
+  document.getElementById('nav-ingredients').classList.toggle('active', section === 'ingredients');
 }
 
 function closeManageModal() {
