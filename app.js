@@ -388,9 +388,9 @@ function openManageModal() {
   document.getElementById('manage-modal').classList.remove('hidden');
 }
 
-function scrollManageTo(sectionId, btn) {
-  const el = document.getElementById(sectionId);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function switchManageSection(section, btn) {
+  document.getElementById('products-section').style.display = section === 'products' ? '' : 'none';
+  document.getElementById('ingredients-section').style.display = section === 'ingredients' ? '' : 'none';
   document.querySelectorAll('.manage-nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
