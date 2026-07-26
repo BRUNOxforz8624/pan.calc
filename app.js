@@ -939,8 +939,8 @@ function renderRawMaterials() {
         <div class="prod-card-left">
           <div class="prod-card-name">${ing.name}</div>
           <div class="prod-card-stats">
-            <span class="prod-card-stat">Ingresados: <strong>${ingresados.toFixed(0)}</strong></span>
-            <span class="prod-card-stat neto">Restante: <strong>${restante.toFixed(0)}</strong></span>
+            <span class="prod-card-stat">Consumo: <strong>${ingresados.toFixed(0)}</strong></span>
+            <span class="prod-card-stat neto">Total: <strong>${restante.toFixed(0)}</strong></span>
           </div>
         </div>
         <div class="prod-card-circle ${isDone ? 'done' : ''}">
@@ -969,7 +969,7 @@ function openIngredientModal(name) {
   id.ingresos.forEach((t, i) => {
     html += `
       <div class="tanda-row">
-        <span class="tanda-row-label">Ingreso ${i + 1}</span>
+        <span class="tanda-row-label">Consumo ${i + 1}</span>
         <input type="time" id="ingreso-time-${i}" value="${t.time || ''}">
         <input type="number" id="ingreso-qty-${i}" min="0" value="${t.qty || ''}" inputmode="numeric" placeholder="Cant">
       </div>`;
