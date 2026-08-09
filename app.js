@@ -94,6 +94,32 @@ let searchQuery = '';
 let dbReady = false;
 let pendingRender = false;
 
+// ============================
+// CACHÉ LOCAL (los datos sobreviven a la recarga de la página)
+// ============================
+function saveCache(key, obj) {
+  try { localStorage.setItem('pancalc_cache_' + key, JSON.stringify(obj || {})); } catch (e) {}
+}
+function loadCache(key) {
+  try { return JSON.parse(localStorage.getItem('pancalc_cache_' + key) || 'null'); } catch (e) { return null; }
+}
+function restoreFromCache() {
+  let restored = false;
+  const p = loadCache('production');
+  if (p && typeof p === 'object') { production = p; restored = true; }
+  const b = loadCache('batch');
+  if (b && typeof b === 'object') { batchData = b; restored = true; }
+  const o = loadCache('orders');
+  if (o && typeof o === 'object') { orderData = o; restored = true; }
+  const r = loadCache('rawmaterials');
+  if (r && typeof r === 'object') { rawmaterialsData = r; restored = true; }
+  const pr = loadCache('products');
+  if (pr && pr.length) { PRODUCTS = pr; restored = true; }
+  const ing = loadCache('ingredients');
+  if (ing && ing.length) { INGREDIENTS = ing; restored = true; }
+  return restored;
+}
+
 function getTodayProd() {
   const key = getTodayKey();
   if (!production[key]) production[key] = {};
@@ -183,6 +209,7 @@ function migrateFromLocal() {
 // Escuchar cambios en Firebase (tiempo real)
 prodRef.on('value', snap => {
   production = snap.val() || {};
+  saveCache('production', production);
   dbReady = true;
   if (pendingRender) { renderAll(); pendingRender = false; }
   else if (currentTab === 'today') renderTodayView();
@@ -403,6 +430,7 @@ function loadProducts() {
       productsRef.set(DEFAULT_PRODUCTS);
       PRODUCTS = [...DEFAULT_PRODUCTS];
     }
+    saveCache('products', PRODUCTS);
     renderAll();
   });
 }
@@ -934,6 +962,7 @@ function loadIngredients() {
       ingredientsRef.set(DEFAULT_INGREDIENTES);
       INGREDIENTS = [...DEFAULT_INGREDIENTES];
     }
+    saveCache('ingredients', INGREDIENTS);
     applyDailyCarryover();
   });
 }
@@ -1153,6 +1182,7 @@ function renderReporteFinal() {
 // Escuchar cambios en batch (tiempo real)
 batchRef.on('value', snap => {
   batchData = snap.val() || {};
+  saveCache('batch', batchData);
   renderProduction();
   renderReporteFinal();
   renderAllViews();
@@ -1161,6 +1191,7 @@ batchRef.on('value', snap => {
 // Escuchar cambios en pedidos
 ordersRef.on('value', snap => {
   orderData = snap.val() || {};
+  saveCache('orders', orderData);
   if (currentTab === 'week') renderCalView();
   renderAllViews();
 });
@@ -1168,6 +1199,7 @@ ordersRef.on('value', snap => {
 // Escuchar cambios en materia prima
 rawmaterialsRef.on('value', snap => {
   rawmaterialsData = snap.val() || {};
+  saveCache('rawmaterials', rawmaterialsData);
   applyDailyCarryover();
   if (currentTab === 'rawmaterials') renderRawMaterials();
   renderAllViews();
@@ -1333,12 +1365,15 @@ function sendToThingSpeak() {
 document.addEventListener('DOMContentLoaded', () => {
   migrateFromLocal();
 
+  // Restaurar datos guardados localmente (sobreviven a la recarga, incluso offline)
+  const hadCache = restoreFromCache();
+
   // Cargar productos desde Firebase
   loadProducts();
   loadIngredients();
 
-  // Si Firebase ya cargó datos, renderiza; sino espera el listener
-  if (dbReady) renderAll();
+  // Si Firebase ya cargó datos o hay caché, renderiza; sino espera el listener
+  if (dbReady || hadCache) renderAll();
   else pendingRender = true;
 
   // Tabs
