@@ -1411,19 +1411,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderAll();
 });
-
-// ============================
-// INDICADOR DE VERSIÓN
-// ============================
-const APP_VERSION = 'v10';
-(function showVersion() {
-  console.log('PanCalc ' + APP_VERSION);
-  try {
-    const badge = document.createElement('span');
-    badge.id = 'version-badge';
-    badge.textContent = APP_VERSION;
-    badge.style.cssText = 'font-size:11px;color:#283618;background:#fefae0;border:1px solid #bc6c25;border-radius:8px;padding:1px 6px;margin-left:6px;font-weight:bold;vertical-align:middle;';
-    const h1 = document.querySelector('header h1');
-    if (h1) h1.appendChild(badge);
-  } catch (e) {}
-})();
