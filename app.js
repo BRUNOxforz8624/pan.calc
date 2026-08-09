@@ -122,29 +122,59 @@ function getWeeklyTarget(p) {
 }
 
 function addProduction(productName, amount) {
+  // Incremento atómico server-side: no pierde toques entre dispositivos
+  // (antes se escribía el día completo con .set() y un dispositivo pisaba al otro).
+  // Además Firebase lo aplica en caché local → la vista se actualiza al instante.
+  const ref = prodRef.child(getTodayKey()).child(productName);
   const todayProd = getTodayProd();
-  todayProd[productName] = (todayProd[productName] || 0) + amount;
-  if (todayProd[productName] <= 0) delete todayProd[productName];
-  prodRef.child(getTodayKey()).set(todayProd);
+  const cur = todayProd[productName] || 0;
+  const nextVal = cur + amount;
+
+  if (nextVal <= 0) {
+    ref.remove();
+    delete todayProd[productName];
+  } else {
+    ref.set(firebase.database.ServerValue.increment(amount));
+    todayProd[productName] = nextVal;
+  }
 
   try { navigator.vibrate(10); } catch(e) {}
 
   const totalSimple = Object.values(getTodayProd()).reduce((s, v) => s + v, 0);
   if (totalSimple % 5 === 0 || amount < 0) sendToThingSpeak();
+
+  renderForCurrentTab();
+}
+
+function renderForCurrentTab() {
+  if (currentTab === 'today') renderTodayView();
+  else if (currentTab === 'report') { renderReport(); renderReporteFinal(); }
 }
 
 // Migrar datos de localStorage a Firebase (1 vez)
 function migrateFromLocal() {
   try {
     const saved = localStorage.getItem('pancalc_v2_production');
-    if (saved) {
+    if (saved && !localStorage.getItem('pancalc_migrated_prod')) {
+      localStorage.setItem('pancalc_migrated_prod', '1');
       const data = JSON.parse(saved);
-      prodRef.set(data);
+      if (data && typeof data === 'object' && Object.keys(data).length) {
+        // Fusiona por día: no pisa días que ya existan en Firebase
+        const updates = {};
+        Object.keys(data).forEach(k => { updates['/' + k] = data[k]; });
+        prodRef.update(updates);
+      }
       localStorage.removeItem('pancalc_v2_production');
     }
     const savedBatch = localStorage.getItem('pancalc_batch');
-    if (savedBatch) {
-      batchRef.set(JSON.parse(savedBatch));
+    if (savedBatch && !localStorage.getItem('pancalc_migrated_batch')) {
+      localStorage.setItem('pancalc_migrated_batch', '1');
+      const data = JSON.parse(savedBatch);
+      if (data && typeof data === 'object' && Object.keys(data).length) {
+        const updates = {};
+        Object.keys(data).forEach(k => { updates['/' + k] = data[k]; });
+        batchRef.update(updates);
+      }
       localStorage.removeItem('pancalc_batch');
     }
   } catch(e) {}
@@ -617,8 +647,7 @@ function openModal(name, target) {
   document.getElementById('product-modal').classList.remove('hidden');
 }
 
-function modalAdd(amount) {
-  addProduction(modalProductName, amount);
+function updateModalProgress() {
   const todayProd = getTodayProd();
   const count = todayProd[modalProductName] || 0;
   document.getElementById('modal-count').textContent = count;
@@ -636,18 +665,29 @@ function modalAdd(amount) {
   }
 }
 
+function modalAdd(amount) {
+  addProduction(modalProductName, amount);
+  updateModalProgress();
+}
+
 function modalSetValue() {
   const input = document.getElementById('modal-set-input');
-  let value = parseInt(input.value, 10);
+  let value = parseFloat(input.value);
   if (isNaN(value) || value < 0) value = 0;
 
+  // Fija el valor absoluto. .set() dispara evento local → la UI se actualiza
+  // al instante. Como es un valor absoluto, el último que escribe manda (correcto).
+  const ref = prodRef.child(getTodayKey()).child(modalProductName);
+  if (value === 0) ref.remove();
+  else ref.set(value);
+
   const todayProd = getTodayProd();
-  const current = todayProd[modalProductName] || 0;
-  const diff = value - current;
-  if (diff !== 0) {
-    addProduction(modalProductName, diff);
-  }
+  if (value === 0) delete todayProd[modalProductName];
+  else todayProd[modalProductName] = value;
+
   input.value = '';
+  updateModalProgress();
+  renderForCurrentTab();
 }
 
 function closeModal() {
@@ -894,6 +934,7 @@ function loadIngredients() {
       ingredientsRef.set(DEFAULT_INGREDIENTES);
       INGREDIENTS = [...DEFAULT_INGREDIENTES];
     }
+    applyDailyCarryover();
   });
 }
 
@@ -902,10 +943,10 @@ function getIngredientDayData(ingredientName) {
   if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
   const day = rawmaterialsData[todayKey];
   if (!day[ingredientName]) {
-    day[ingredientName] = { total: 0, ingresos: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}] };
+    day[ingredientName] = { total: 0, time: '', ingresos: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}] };
   }
   if (typeof day[ingredientName] === 'number') {
-    day[ingredientName] = { total: 0, ingresos: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}] };
+    day[ingredientName] = { total: 0, time: '', ingresos: [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}] };
   }
   return day[ingredientName];
 }
@@ -913,6 +954,39 @@ function getIngredientDayData(ingredientName) {
 function calcIngresosTotal(ingresos) {
   if (!Array.isArray(ingresos)) return 0;
   return ingresos.reduce((s, t) => s + (parseFloat(t.qty) || 0), 0);
+}
+
+function getPreviousDayRestante(ingredientName) {
+  const todayKey = getTodayKey();
+  const dates = Object.keys(rawmaterialsData).sort().reverse();
+  for (const dateKey of dates) {
+    if (dateKey >= todayKey) continue;
+    const id = rawmaterialsData[dateKey] && rawmaterialsData[dateKey][ingredientName];
+    if (id === undefined || id === null) continue;
+    const total = typeof id === 'number' ? id : (id.total || 0);
+    const consumo = typeof id === 'number' ? 0 : calcIngresosTotal(id.ingresos);
+    return Math.max(0, total - consumo);
+  }
+  return null;
+}
+
+function applyDailyCarryover() {
+  const todayKey = getTodayKey();
+  if (!rawmaterialsData[todayKey]) rawmaterialsData[todayKey] = {};
+  const emptyIngresos = () => [{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0},{time:'',qty:0}];
+  INGREDIENTS.forEach(ing => {
+    const name = ing.name;
+    if (rawmaterialsData[todayKey][name] !== undefined) return;
+    const restante = getPreviousDayRestante(name);
+    if (restante === null) return;
+    const carry = { total: restante, time: '', ingresos: emptyIngresos() };
+    rawmaterialsData[todayKey][name] = carry;
+    // Escritura atómica por ingrediente: solo crea el carryover si aún no existe
+    // (no pisa datos recién guardados por otro dispositivo con snapshot viejo)
+    rawmaterialsRef.child(todayKey).child(name).transaction(current => {
+      return (current === null || current === undefined) ? carry : undefined;
+    });
+  });
 }
 
 function renderRawMaterials() {
@@ -942,6 +1016,7 @@ function renderRawMaterials() {
           <div class="prod-card-stats">
             <span class="prod-card-stat">Consumo: <strong>${ingresados.toFixed(0)}</strong></span>
             <span class="prod-card-stat neto">Total: <strong>${restante.toFixed(0)}</strong></span>
+            ${id.time ? `<span class="prod-card-stat time">Hora: <strong>${id.time}</strong></span>` : ''}
           </div>
         </div>
         <div class="prod-card-circle ${isDone ? 'done' : ''}">
@@ -978,6 +1053,7 @@ function openIngredientModal(name) {
   list.innerHTML = html;
 
   document.getElementById('ingreso-total-input').value = id.total || 0;
+  document.getElementById('ingreso-time-input').value = id.time || '';
   updateIngredientSummary();
   document.getElementById('ingredient-modal').classList.remove('hidden');
 
@@ -1014,6 +1090,7 @@ function saveIngredientIngresos() {
     }
   }
   id.total = parseFloat(document.getElementById('ingreso-total-input').value) || 0;
+  id.time = document.getElementById('ingreso-time-input').value;
   rawmaterialsRef.child(getTodayKey()).child(ingredientModalName).set(id);
   document.getElementById('ingredient-modal').classList.add('hidden');
   renderRawMaterials();
@@ -1091,6 +1168,7 @@ ordersRef.on('value', snap => {
 // Escuchar cambios en materia prima
 rawmaterialsRef.on('value', snap => {
   rawmaterialsData = snap.val() || {};
+  applyDailyCarryover();
   if (currentTab === 'rawmaterials') renderRawMaterials();
   renderAllViews();
 });
@@ -1333,3 +1411,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderAll();
 });
+
+// ============================
+// INDICADOR DE VERSIÓN
+// ============================
+const APP_VERSION = 'v10';
+(function showVersion() {
+  console.log('PanCalc ' + APP_VERSION);
+  try {
+    const badge = document.createElement('span');
+    badge.id = 'version-badge';
+    badge.textContent = APP_VERSION;
+    badge.style.cssText = 'font-size:11px;color:#283618;background:#fefae0;border:1px solid #bc6c25;border-radius:8px;padding:1px 6px;margin-left:6px;font-weight:bold;vertical-align:middle;';
+    const h1 = document.querySelector('header h1');
+    if (h1) h1.appendChild(badge);
+  } catch (e) {}
+})();

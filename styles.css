@@ -576,6 +576,7 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .prod-card-stat.mermas strong { color: #9c6644; }
 .prod-card-stat.neto strong { color: #606c38; }
+.prod-card-stat.time strong { color: #9c6644; }
 
 /* Mini circular progress */
 .prod-card-circle {
@@ -684,6 +685,20 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
 
 .tanda-mermas-row input:focus {
   border-color: #bc6c25;
+}
+
+.tanda-mermas-row.ingreso-row { align-items: center; }
+
+.ingreso-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ingreso-inputs input[type="time"] {
+  width: auto;
+  padding: 6px 8px;
+  color: #283618;
 }
 
 .tanda-save-btn {
@@ -1071,6 +1086,7 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .prod-card-stat strong { color: #e0e0e0; }
   .prod-card-stat.mermas strong { color: #dda15e; }
   .prod-card-stat.neto strong { color: #a3b18a; }
+  .prod-card-stat.time strong { color: #dda15e; }
   .prod-circle-bg { stroke: #2a2a4a; }
   .prod-circle-fill { stroke: #dda15e; }
   .prod-circle-text { fill: #e0e0e0; }
@@ -1086,6 +1102,7 @@ header h1 { font-size: 1.4rem; color: #bc6c25; }
   .tanda-total-row strong, .tanda-neto-row strong { color: #e0e0e0; }
   .tanda-neto-row strong { color: #a3b18a; }
   .tanda-mermas-row input { background: #16213e; border-color: #2a2a4a; color: #dda15e; }
+  .ingreso-inputs input[type="time"] { color: #e0e0e0; }
   .modal-backdrop { background: rgba(0,0,0,0.6); }
   .gear-btn:active { background: #2a2a4a; }
   .manage-item { background: #0f3460; }
